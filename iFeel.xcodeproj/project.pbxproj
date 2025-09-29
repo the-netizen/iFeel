@@ -10,9 +10,33 @@
 		F37BA6C12E8AC7C800101D47 /* iFeel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iFeel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F37BA6F32E8AD53700101D47 /* Exceptions for "iFeel" folder in "iFeel" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Techniquepage.swift,
+			);
+			target = F37BA6C02E8AC7C800101D47 /* iFeel */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		F37BA6F42E8AD53700101D47 /* Exceptions for "iFeel" folder in "Copy Bundle Resources" phase from "iFeel" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = F37BA6BF2E8AC7C800101D47 /* Resources */;
+			membershipExceptions = (
+				Techniquepage.swift,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F37BA6C32E8AC7C800101D47 /* iFeel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F37BA6F32E8AD53700101D47 /* Exceptions for "iFeel" folder in "iFeel" target */,
+				F37BA6F42E8AD53700101D47 /* Exceptions for "iFeel" folder in "Copy Bundle Resources" phase from "iFeel" target */,
+			);
 			path = iFeel;
 			sourceTree = "<group>";
 		};
