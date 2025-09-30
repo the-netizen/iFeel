@@ -106,10 +106,10 @@ struct Wheel7: View {
 }
 
 // ---------- 4) App entry ----------
-struct ContentView: View {
-    var body: some View {
-        Wheel7().frame(width: 300, height: 300)
-    }
-}
+//struct ContentView: View {
+//    var body: some View {
+//        Wheel7().frame(width: 300, height: 300)
+//    }
+//}
 
-#Preview { ContentView() }
+#Preview { Wheel7() }
