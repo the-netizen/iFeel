@@ -48,6 +48,7 @@ struct DonutView : View {
                     .fill(Color(.systemBackground)) // Or your desired background color
                     .frame(width: 100, height: 100) // Adjust the hole size here
             }
+            
             .frame(width: 250, height: 250)
         }
 }
