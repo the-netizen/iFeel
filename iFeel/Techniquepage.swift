@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ContentView: View {
+struct TechView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var currentPage = 0
@@ -8,7 +8,8 @@ struct ContentView: View {
     private let pages = [
         "Focus on your body and thoughts",
         "Take deep breaths and relax",
-        "Clear your mind and meditate"
+        "Clear your mind and meditate",
+        "Journal your thoughts and feelings"
     ]
 
     var body: some View {
@@ -82,5 +83,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    TechView()
 }
