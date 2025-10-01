@@ -7,109 +7,79 @@
 
 import SwiftUI
 
-// ---------- 1) Slice shape (sector) with configurable gap ----------
-struct Wedge: Shape {
-    var startDeg: Double
-    var endDeg: Double
-    var innerRadiusFactor: CGFloat = 0.0   // 0 = full pie; 0.6 = donut
-    var gapDegrees: Double = 4.0           // visual space between slices
+struct NIcon: Shape {
+    var startAngle: Angle
+    var endAngle: Angle
 
     func path(in rect: CGRect) -> Path {
-        let c = CGPoint(x: rect.midX, y: rect.midY)
-        let rOuter = min(rect.width, rect.height) * 0.5
-        let rInner = rOuter * innerRadiusFactor
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
 
-        // shift start/end by half the gap; 0° at 12 o'clock
-        let g = gapDegrees * .pi / 180 / 2
-        let s = (startDeg - 90) * .pi / 180 + g
-        let e = (endDeg   - 90) * .pi / 180 - g
-
-        var p = Path()
-        p.addArc(center: c, radius: rOuter, startAngle: .radians(s), endAngle: .radians(e), clockwise: false)
-        p.addLine(to: CGPoint(x: c.x + rInner * CGFloat(cos(e)), y: c.y + rInner * CGFloat(sin(e))))
-        p.addArc(center: c, radius: rInner, startAngle: .radians(e), endAngle: .radians(s), clockwise: true)
-        p.closeSubpath()
-        return p
+        var path = Path()
+        path.move(to: center)
+        path.addArc(
+            center: center,
+            radius: radius,
+            startAngle: startAngle,
+            endAngle: endAngle,
+            clockwise: false
+        )
+        path.closeSubpath()
+        return path
     }
 }
 
-// ---------- 2) One interactive slice ----------
-struct SliceView: View {
-    let index: Int
-    let startDeg: Double
-    let endDeg: Double
-    let color: Color
-    let innerFactor: CGFloat
-    let gapDeg: Double
-    let explodeDistance: CGFloat
-
-    @Binding var selected: Int?   // which slice is exploded
-
-    var body: some View {
-        // mid-angle (for outward direction)
-        let mid = (startDeg + endDeg) / 2
-        let rad = (mid - 90) * .pi / 180
-        let isSelected = selected == index
-
-        let dx = isSelected ? explodeDistance * CGFloat(cos(rad)) : 0
-        let dy = isSelected ? explodeDistance * CGFloat(sin(rad)) : 0
-
-        Wedge(startDeg: startDeg, endDeg: endDeg,
-              innerRadiusFactor: innerFactor, gapDegrees: gapDeg)
-            .fill(color)
-            .overlay(
-                Wedge(startDeg: startDeg, endDeg: endDeg,
-                      innerRadiusFactor: innerFactor, gapDegrees: gapDeg)
-                    .stroke(.white.opacity(0.9), lineWidth: 1)
-            )
-            .offset(x: dx, y: dy) // <- independent animated movement
-            .onTapGesture {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                    selected = isSelected ? nil : index
-                }
-            }
-    }
-}
-
-// ---------- 3) The wheel composed of independent slices ----------
-struct Wheel7: View {
+struct Donut2View: View {
     private let n = 7
-    private let colors: [Color] = [.pink, .orange, .yellow, .green, .mint, .blue, .purple]
-    @State private var selected: Int? = nil
+    private let colors: [Color] = [.red, .orange, .yellow, .green, .cyan, .blue, .purple]
+    private let explodeDistance: CGFloat = 18       // كم تبعد القطعة عند الضغط
+    private let holeDiameter: CGFloat = 100         // قطر ثقب الدونات
 
-    // knobs you can tweak
-    private let innerFactor: CGFloat = 0.0     // 0 = full pie; try 0.55 for donut
-    private let gapDeg: Double = 5.0           // visual separation
-    private let explode: CGFloat = 18          // how far a selected slice moves
+    @State private var selected: Int? = nil         // رقم القطعة المختارة
 
     var body: some View {
         let step = 360.0 / Double(n)
 
         ZStack {
             ForEach(0..<n, id: \.self) { i in
-                let start = Double(i) * step
-                let end   = Double(i + 1) * step
+                let start = Angle(degrees: step * Double(i))
+                let end   = Angle(degrees: step * Double(i + 1))
+                let midDeg = (start.degrees + end.degrees) / 2.0
+                let rad = (midDeg) * .pi / 180
 
-                SliceView(index: i,
-                          startDeg: start,
-                          endDeg: end,
-                          color: colors[i % colors.count],
-                          innerFactor: innerFactor,
-                          gapDeg: gapDeg,
-                          explodeDistance: explode,
-                          selected: $selected)
+                let isSelected = (selected == i)
+                let dx = isSelected ? explodeDistance * CGFloat(cos(rad)) : 0
+                let dy = isSelected ? explodeDistance * CGFloat(sin(rad)) : 0
+
+                MyIcon(startAngle: start, endAngle: end)
+                    .fill(colors[i % colors.count])
+                    .overlay(
+                        MyIcon(startAngle: start, endAngle: end)
+                            .stroke(.white.opacity(0.9), lineWidth: 6)
+                    )
+                    .offset(x: dx, y: dy)
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            selected = isSelected ? nil : i
+                        }
+                    }
+                    
             }
+
+            // ثقب الدونات (لا يستقبل لمس)
+            Circle()
+                .fill(Color(.systemBackground))
+//                .frame(width: holeDiameter, height: holeDiameter)
+                .frame(width: 130, height: 130)
+                .allowsHitTesting(false)
+                
         }
-        .aspectRatio(1, contentMode: .fit)
-        .padding()
+//        .frame(width: 320, height: 320)
+        .frame(width: 350, height: 350)
+        
     }
 }
 
-// ---------- 4) App entry ----------
-//struct ContentView: View {
-//    var body: some View {
-//        Wheel7().frame(width: 300, height: 300)
-//    }
-//}
-
-#Preview { Wheel7() }
+#Preview {
+    Donut2View()
+}
