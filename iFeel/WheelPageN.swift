@@ -51,10 +51,10 @@ struct Donut2View: View {
                 let dx = isSelected ? explodeDistance * CGFloat(cos(rad)) : 0
                 let dy = isSelected ? explodeDistance * CGFloat(sin(rad)) : 0
 
-                MyIcon(startAngle: start, endAngle: end)
+                NIcon(startAngle: start, endAngle: end)
                     .fill(colors[i % colors.count])
                     .overlay(
-                        MyIcon(startAngle: start, endAngle: end)
+                        NIcon(startAngle: start, endAngle: end)
                             .stroke(.white.opacity(0.9), lineWidth: 6)
                     )
                     .offset(x: dx, y: dy)

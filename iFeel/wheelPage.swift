@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NIcon: Shape {
+struct SegmentIcon: Shape {
     var startAngle: Angle
     var endAngle: Angle
 
@@ -29,7 +29,7 @@ struct NIcon: Shape {
     }
 }
 
-struct Donut2View: View {
+struct DonutView: View {
     private let n = 7
     private let colors: [Color] = [.red, .orange, .yellow, .green, .cyan, .blue, .purple]
     private let explodeDistance: CGFloat = 18       // كم تبعد القطعة عند الضغط
@@ -51,10 +51,10 @@ struct Donut2View: View {
                 let dx = isSelected ? explodeDistance * CGFloat(cos(rad)) : 0
                 let dy = isSelected ? explodeDistance * CGFloat(sin(rad)) : 0
 
-                MyIcon(startAngle: start, endAngle: end)
+                SegmentIcon(startAngle: start, endAngle: end)
                     .fill(colors[i % colors.count])
                     .overlay(
-                        MyIcon(startAngle: start, endAngle: end)
+                        SegmentIcon(startAngle: start, endAngle: end)
                             .stroke(.white.opacity(0.9), lineWidth: 6)
                     )
                     .offset(x: dx, y: dy)
@@ -81,5 +81,5 @@ struct Donut2View: View {
 }
 
 #Preview {
-    Donut2View()
+    DonutView()
 }
