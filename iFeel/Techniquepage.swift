@@ -1,4 +1,4 @@
-import SwiftUI
+/**import SwiftUI
 
 // MARK: - Emotion Data Model
 struct Emotion {
@@ -176,3 +176,4 @@ struct MindOnboardingView_Previews: PreviewProvider {
         MindOnboardingView()
     }
 }
+**/
