@@ -1,85 +1,470 @@
-//
-//  ContentView.swift
-//  test
-//
-//  Created by Noura Faiz Alfaiz on 28/09/2025.
-//
-
 import SwiftUI
 
-struct NIcon: Shape {
-    var startAngle: Angle
-    var endAngle: Angle
+// MARK: - Helpers
+
+extension Color {
+    static let fuchsia = Color(red: 1.00, green: 0.18, blue: 0.61)
+}
+
+struct RingWedge: Shape {
+    var startDeg: Double
+    var endDeg: Double
+    var innerRadiusFactor: CGFloat = 0.58
+    var gapDegrees: Double = 5.0
 
     func path(in rect: CGRect) -> Path {
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let radius = min(rect.width, rect.height) / 2
-
-        var path = Path()
-        path.move(to: center)
-        path.addArc(
-            center: center,
-            radius: radius,
-            startAngle: startAngle,
-            endAngle: endAngle,
-            clockwise: false
-        )
-        path.closeSubpath()
-        return path
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let rOuter = min(rect.width, rect.height) * 0.5
+        let rInner = rOuter * innerRadiusFactor
+        let g = gapDegrees * .pi / 180 / 2
+        let s = startDeg * .pi / 180 + g
+        let e = endDeg   * .pi / 180 - g
+        var p = Path()
+        p.addArc(center: c, radius: rOuter, startAngle: .radians(s), endAngle: .radians(e), clockwise: false)
+        p.addLine(to: CGPoint(x: c.x + rInner * CGFloat(cos(e)), y: c.y + rInner * CGFloat(sin(e))))
+        p.addArc(center: c, radius: rInner, startAngle: .radians(e), endAngle: .radians(s), clockwise: true)
+        p.closeSubpath()
+        return p
     }
 }
 
-struct Donut2View: View {
-    private let n = 7
-    private let colors: [Color] = [.red, .orange, .yellow, .green, .cyan, .blue, .purple]
-    private let explodeDistance: CGFloat = 18       // كم تبعد القطعة عند الضغط
-    private let holeDiameter: CGFloat = 100         // قطر ثقب الدونات
+// MARK: - Wheel (Page 1)
 
-    @State private var selected: Int? = nil         // رقم القطعة المختارة
+import SwiftUI
+
+struct WheelController: View {
+    private let n = 7
+    private let colors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple, .fuchsia]
+    private let titles  = ["ANGRY","BAD","HAPPY","DISGUSTED","SAD","FEARFUL","SURPRISED"]
+
+    // ---- TEXT & LAYOUT KNOBS (عدّل براحتك) ----
+    // أعلى اليسار
+    private let iFeelText: String = "iFeel"
+    private let iFeelFontSize: CGFloat = 25
+    private let iFeelTopPadding: CGFloat = 20
+    private let iFeelLeadingPadding: CGFloat = 30
+
+    // النص فوق العجلة
+    private let promptTopText: String = "How Do You"
+    private let promptTopSize: CGFloat = 55
+    private let promptTopOffsetY: CGFloat = -50      // + ينزل / - يطلع
+
+    // النص تحت العجلة
+    private let promptBottomText: String = "Feel?"
+    private let promptBottomSize: CGFloat = 55
+    private let promptBottomOffsetY: CGFloat = 44   // + ينزل / - يطلع
+
+    // الدائرة البيضاء داخل العجلة + نصها
+    private let hubDiameter: CGFloat = 0          // حجم الدائرة البيضاء
+    private let hubOffsetY: CGFloat = 0            // تحريك الدائرة عموديًا
+    private let hubText: String = "Tab"            // لو قصدك Tap غيّرها هنا
+    private let hubTextSize: CGFloat = 33
+
+    // ترتيب عام للستاك
+    private let wheelStackTopPadding: CGFloat = 24 // يبعد كل المجموعة عن أعلى الشاشة
+    private let wheelStackSpacing: CGFloat = 12    // المسافة بين العناصر الثلاثة
+    // -------------------------------------------
+
+    // (نفس حالاتك السابقة)
+    @State private var selected: Int? = nil
+    @State private var wheelRotation: Double = 0
+    @State private var isZooming: Bool = false
+    @State private var goDetail: Bool = false
+    @State private var showTechniquePage: Bool = false
+    @State private var showCompletionPage: Bool = false
 
     var body: some View {
+        NavigationStack {
+            ZStack(alignment: .topLeading) {
+                // iFeel أعلى اليسار
+                Text(iFeelText)
+                    .font(.system(size: iFeelFontSize, weight: .semibold))
+                    .padding(.top, iFeelTopPadding)
+                    .padding(.leading, iFeelLeadingPadding)
+
+                // العناوين + العجلة + العنوان السفلي
+                VStack(spacing: wheelStackSpacing) {
+                    Text(promptTopText)
+                        .font(.system(size: promptTopSize, weight: .regular))
+                        .offset(y: promptTopOffsetY)
+
+                    // مركز العجلة: دائرة بيضاء + العجلة + نص "Tab"
+                    ZStack {
+                        // الدائرة البيضاء خلف العجلة (تظهر من ثقب الدونات)
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: hubDiameter, height: hubDiameter)
+                            .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+                            .offset(y: hubOffsetY)
+
+                        // العجلة نفسها
+                        wheel
+
+                        // نص داخل الدائرة — ما يمنع اللمس على الشرائح
+                        Text(hubText)
+                            .font(.system(size: hubTextSize, weight: .semibold))
+                            .offset(y: hubOffsetY)
+                            .allowsHitTesting(false)
+                    }
+
+                    Text(promptBottomText)
+                        .font(.system(size: promptBottomSize, weight: .bold))
+                        .offset(y: promptBottomOffsetY)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal)
+                .padding(.top, wheelStackTopPadding)
+            }
+            // نفس سلسة التنقّلات التي كانت عندك
+            .navigationDestination(isPresented: $goDetail) {
+                if let i = selected {
+                    DetailScreen(
+                        titleTop: "You Picked",
+                        mood: titles[i],
+                        color: colors[i],
+                        onStart: { showTechniquePage = true }
+                    )
+                }
+            }
+            .navigationDestination(isPresented: $showTechniquePage) {
+                if let i = selected {
+                    TechView(onDone: { showCompletionPage = true },
+                             backgroundColor: colors[i])
+                }
+            }
+            .navigationDestination(isPresented: $showCompletionPage) {
+                if let i = selected {
+                    CompletionView(onDone: navigateBackToRoot,
+                                   themeColor: colors[i])
+                }
+            }
+        }
+    }
+
+    private func navigateBackToRoot() {
+        showCompletionPage = false
+        showTechniquePage = false
+        goDetail = false
+    }
+
+    // نفس العجلة كما هي
+    private var wheel: some View {
         let step = 360.0 / Double(n)
-
-        ZStack {
+        return ZStack {
             ForEach(0..<n, id: \.self) { i in
-                let start = Angle(degrees: step * Double(i))
-                let end   = Angle(degrees: step * Double(i + 1))
-                let midDeg = (start.degrees + end.degrees) / 2.0
-                let rad = (midDeg) * .pi / 180
+                let start = Double(i) * step
+                let end   = Double(i + 1) * step
+                let mid   = (start + end) / 2.0
+                let rad   = mid * .pi / 180
 
-                let isSelected = (selected == i)
-                let dx = isSelected ? explodeDistance * CGFloat(cos(rad)) : 0
-                let dy = isSelected ? explodeDistance * CGFloat(sin(rad)) : 0
+                let isSel = (selected == i)
+                let dx = isSel ? 18 * CGFloat(cos(rad)) : 0
+                let dy = isSel ? 18 * CGFloat(sin(rad)) : 0
 
-                NIcon(startAngle: start, endAngle: end)
-                    .fill(colors[i % colors.count])
+                RingWedge(startDeg: start, endDeg: end,
+                          innerRadiusFactor: 0.58, gapDegrees: 5.0)
+                    .fill(colors[i])
+                    .compositingGroup()
+                    .shadow(color: .black.opacity(0.30), radius: 8, y: 4)
                     .overlay(
-                        NIcon(startAngle: start, endAngle: end)
-                            .stroke(.white.opacity(0.9), lineWidth: 6)
+                        RingWedge(startDeg: start, endDeg: end,
+                                  innerRadiusFactor: 0.58, gapDegrees: 5.0)
+                            .stroke(.white.opacity(0.9), lineWidth: 1)
                     )
                     .offset(x: dx, y: dy)
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            selected = isSelected ? nil : i
-                        }
-                    }
-                    
+                    .scaleEffect(isSel && isZooming ? 2.0 : 1.0)
+                    .zIndex(isSel && isZooming ? 1 : 0)
+                    .onTapGesture { handleTap(index: i, mid: mid) }
             }
-
-            // ثقب الدونات (لا يستقبل لمس)
-            Circle()
-                .fill(Color(.systemBackground))
-//                .frame(width: holeDiameter, height: holeDiameter)
-                .frame(width: 130, height: 130)
-                .allowsHitTesting(false)
-                
         }
-//        .frame(width: 320, height: 320)
-        .frame(width: 350, height: 350)
-        
+        .frame(width: 280, height: 280)
+        .rotationEffect(.degrees(wheelRotation))
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selected)
+        .animation(.spring(response: 0.6, dampingFraction: 0.85), value: wheelRotation)
+        .animation(.spring(response: 0.45, dampingFraction: 0.9), value: isZooming)
+    }
+
+    private func handleTap(index i: Int, mid: Double) {
+        let already = (selected == i)
+        selected = already ? nil : i
+        guard !already else { return }
+
+        let currentWorldAngle = mid + wheelRotation
+        let delta = -90.0 - currentWorldAngle
+        let normalizedDelta = ((delta + 180).truncatingRemainder(dividingBy: 360)) - 180
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
+                wheelRotation += normalizedDelta
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28 + 0.55) {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+                isZooming = true
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28 + 0.55 + 0.45) {
+            goDetail = true
+            isZooming = false
+        }
+    }
+}
+
+
+struct DetailScreen: View {
+    let titleTop: String
+    let mood: String
+    let color: Color
+    var onStart: () -> Void = {}
+
+    var titleTopPadding: CGFloat = 330
+    var heroTop: CGFloat = 570
+    var heroDiameter: CGFloat = 750
+    var sliceSpanDeg: Double = 85
+    var sliceInnerFactor: CGFloat = 0.20
+    var neighborsSpanScale: Double = 0.88
+    var neighborsGapDeg: Double = 1.5
+    var neighborsOffsetDeg: Double = -6
+    var glowOpacity: Double = 0.35
+    var glowBlur: CGFloat = 55
+    var bottomCircleScale: CGFloat = 1.2
+    var bottomYOffsetFactor: CGFloat = 0.93
+    var startButtonOffset: CGFloat = 280
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color(.systemBackground).ignoresSafeArea()
+            ZStack(alignment: .top) {
+                hero
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, heroTop)
+                VStack(spacing: 8) {
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        .tint(.primary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+
+                    VStack(spacing: 6) {
+                        Text(titleTop).font(.system(size: 28, weight: .medium))
+                        Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
+                    }
+                }
+                .padding(.top, titleTopPadding)
+            }
+            bottomOverlay
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+
+    private var hero: some View {
+        ZStack {
+            let span = sliceSpanDeg
+            let start = -90.0 - span/2
+            let end   = -90.0 + span/2
+            let nSpan = span * neighborsSpanScale
+            Circle()
+                .fill(color.opacity(glowOpacity))
+                .frame(width: heroDiameter * 0.9, height: heroDiameter * 0.9)
+                .blur(radius: glowBlur)
+                .blendMode(.plusLighter)
+                .offset(y: 8)
+            RingWedge(startDeg: start - neighborsOffsetDeg - nSpan,
+                      endDeg:   start - neighborsOffsetDeg,
+                      innerRadiusFactor: sliceInnerFactor,
+                      gapDegrees: neighborsGapDeg)
+                .fill(Color.black.opacity(0.16))
+                .frame(width: heroDiameter, height: heroDiameter)
+            RingWedge(startDeg: end + neighborsOffsetDeg,
+                      endDeg:   end + neighborsOffsetDeg + nSpan,
+                      innerRadiusFactor: sliceInnerFactor,
+                      gapDegrees: neighborsGapDeg)
+                .fill(Color.black.opacity(0.16))
+                .frame(width: heroDiameter, height: heroDiameter)
+            RingWedge(startDeg: start, endDeg: end,
+                      innerRadiusFactor: sliceInnerFactor, gapDegrees: 20)
+                .fill(color)
+                .frame(width: heroDiameter, height: heroDiameter)
+                .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+        }
+        .frame(height: heroDiameter)
+    }
+
+    private var bottomOverlay: some View {
+        ZStack {
+            Circle()
+                .fill(Color.white)
+                .frame(width: UIScreen.main.bounds.width * bottomCircleScale,
+                       height: UIScreen.main.bounds.width * bottomCircleScale)
+                .offset(y: UIScreen.main.bounds.width * bottomYOffsetFactor)
+                .shadow(color: .black.opacity(0.08), radius: 16, y: -4)
+
+            Button(action: onStart) {
+                Text("START")
+                    .font(.system(size: 22, weight: .semibold))
+                    .padding(.horizontal, 36)
+                    .padding(.vertical, 14)
+                    .background(color)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .offset(y: startButtonOffset)
+        }
+        .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+
+// MARK: - Technique (Page 3)
+
+struct TechView: View {
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var currentPage = 0
+    var onDone: () -> Void = {}
+    
+    // 1. Add a property to accept the background color
+    var backgroundColor: Color = Color(red: 0.90, green: 1.0, blue: 0.90)
+
+    private let pages = [
+        "Focus on your body and thoughts", "Take deep breaths and relax",
+        "Clear your mind and meditate", "Journal your thoughts and feelings"
+    ]
+
+    var body: some View {
+        ZStack {
+            // 2. Use the passed-in color for the background
+            backgroundColor.opacity(0.25).ignoresSafeArea()
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    if currentPage == pages.count - 1 {
+                        Button {
+                            hasSeenOnboarding = true
+                            onDone()
+                        } label: {
+                            Text("Done").fontWeight(.medium).foregroundColor(.primary) // Use .primary for better contrast
+                        }
+                        .padding(.trailing, 20)
+                    }
+                }
+                .padding(.top, 20).frame(height: 50)
+                
+                TabView(selection: $currentPage) {
+                    ForEach(0..<pages.count, id: \.self) { i in
+                        VStack {
+                            Spacer()
+                            Image(systemName: "leaf.fill").resizable().scaledToFit()
+                                .frame(maxHeight: 200).foregroundColor(.secondary).padding(.bottom, 50)
+                            Text(pages[i]).font(.system(size: 22, weight: .medium))
+                                .multilineTextAlignment(.center).foregroundColor(.primary)
+                                .padding(.horizontal, 70)
+                            Spacer()
+                        }.tag(i)
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                
+                HStack(spacing: 8) {
+                    ForEach(0..<pages.count, id: \.self) { i in
+                        Circle().fill(i == currentPage ? Color.primary : Color.secondary.opacity(0.4))
+                            .frame(width: 8, height: 8)
+                            .onTapGesture { withAnimation { currentPage = i } }
+                    }
+                }
+                .padding(.bottom, 40)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+}
+
+
+// MARK: - Confetti Views
+
+struct ConfettiPiece: View {
+    @State private var yPos: CGFloat = .random(in: -200...0)
+    @State private var xPos: CGFloat = .random(in: -20...20)
+    @State private var rotation = Angle.degrees(.random(in: 0...360))
+    @State private var opacity: Double = 0.0
+
+    let color: Color = [.blue, .red, .green, .yellow, .purple, .orange].randomElement()!
+    let duration = Double.random(in: 2.5...4.0)
+
+    var body: some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: 10, height: 10)
+            .rotationEffect(rotation, anchor: .center)
+            .offset(x: xPos, y: yPos)
+            .opacity(opacity)
+            .onAppear {
+                withAnimation(.linear(duration: 0.2)) { opacity = 1.0 }
+                withAnimation(.linear(duration: duration).delay(0.1)) {
+                    yPos = 800
+                    xPos += .random(in: -150...150)
+                    rotation += Angle(degrees: .random(in: 360...1080))
+                }
+                withAnimation(.linear(duration: 1.0).delay(duration - 1.0)) { opacity = 0 }
+            }
+    }
+}
+
+struct ConfettiView: View {
+    var body: some View {
+        ZStack {
+            ForEach(0..<150) { _ in ConfettiPiece() }
+        }
+    }
+}
+
+// MARK: - Completion View (Page 4)
+
+struct CompletionView: View {
+    var onDone: () -> Void = {}
+    
+    // 1. Add a property to accept the theme color
+    var themeColor: Color = .green
+
+    var body: some View {
+        ZStack {
+            // 2. Use the passed-in color for the background
+            themeColor.opacity(0.15).ignoresSafeArea()
+
+            ConfettiView()
+
+            VStack(spacing: 16) {
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 80))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, themeColor) // Use the theme color for the star
+                
+                Text("Congratulations!")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text("You have successfully completed the technique.")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done", action: onDone).fontWeight(.semibold)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 
 #Preview {
-    Donut2View()
+    WheelController()
 }
