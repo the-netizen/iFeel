@@ -71,18 +71,10 @@ let emotions: [Emotion] = [
     )
 ]
 
-// MARK: - Flattened Pages (all emotions in one flow)
-private var allPages: [(image: String, text: String, color: Color)] {
-    emotions.flatMap { emotion in
-        emotion.pages.map { (image, text) in
-            (image, text, emotion.color)
-        }
-    }
-}
-
 // MARK: - Main View
 struct MindOnboardingView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var currentEmotion = 0
     @State private var currentPage = 0
 
     var body: some View {
@@ -120,42 +112,59 @@ struct MindOnboardingView: View {
 
                 Spacer()
 
-                // TabView for all pages
-                TabView(selection: $currentPage) {
-                    ForEach(0..<allPages.count, id: \.self) { index in
-                        GeometryReader { geo in
-                            VStack {
-                                Image(allPages[index].image)
-                                    .resizable()
-                                    .renderingMode(.template)
-                                    .foregroundColor(allPages[index].color)
-                                    .scaledToFit()
-                                    .frame(maxHeight: 250)
+                // Outer TabView (emotions)
+                TabView(selection: $currentEmotion) {
+                    ForEach(0..<emotions.count, id: \.self) { emotionIndex in
+                        let emotion = emotions[emotionIndex]
 
-                                Text(allPages[index].text)
-                                    .font(.system(size: 22, weight: .medium))
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.gray)
-                                    .padding(.horizontal, 70)
+                        VStack {
+                            Text(emotion.name)
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(emotion.color)
+                                .padding(.bottom, 20)
+
+                            // Inner TabView (pages for this emotion)
+                            TabView(selection: $currentPage) {
+                                ForEach(0..<emotion.pages.count, id: \.self) { pageIndex in
+                                    GeometryReader { geo in
+                                        VStack {
+                                            Image(emotion.pages[pageIndex].image)
+                                                .resizable()
+                                                .renderingMode(.template)
+                                                .foregroundColor(emotion.color)
+                                                .scaledToFit()
+                                                .frame(maxHeight: 250)
+
+                                            Text(emotion.pages[pageIndex].text)
+                                                .font(.system(size: 22, weight: .medium))
+                                                .multilineTextAlignment(.center)
+                                                .foregroundColor(.gray)
+                                                .padding(.horizontal, 70)
+                                        }
+                                        .frame(width: geo.size.width, height: geo.size.height)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    }
+                                    .tag(pageIndex)
+                                }
                             }
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        .tag(index)
-                    }
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
 
-                // Page indicators
-                HStack(spacing: 8) {
-                    ForEach(0..<allPages.count, id: \.self) { index in
-                        Circle()
-                            .fill(index == currentPage ? Color.gray : Color.gray.opacity(0.4))
-                            .frame(width: 8, height: 8)
-                            .onTapGesture { withAnimation { currentPage = index } }
+                            // Page dots for techniques
+                            HStack(spacing: 8) {
+                                ForEach(0..<emotion.pages.count, id: \.self) { index in
+                                    Circle()
+                                        .fill(index == currentPage ? Color.gray : Color.gray.opacity(0.4))
+                                        .frame(width: 8, height: 8)
+                                        .onTapGesture { withAnimation { currentPage = index } }
+                                }
+                            }
+                            .padding(.bottom, 40)
+                        }
+                        .tag(emotionIndex)
                     }
                 }
-                .padding(.bottom, 40)
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never)) // swipe through emotions
             }
         }
     }
