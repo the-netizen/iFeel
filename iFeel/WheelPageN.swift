@@ -1,19 +1,11 @@
-//
-//  ContentView.swift
-//  test
-//
-//  Created by Noura Faiz Alfaiz on 28/09/2025.
-//
 import SwiftUI
 
 // MARK: - Helpers
 
 extension Color {
-    /// فوشي حقيقي (مو وردي باهت)
-    static let fuchsia = Color(red: 1.00, green: 0.18, blue: 0.61) // تقريبًا #FF2D9B
+    static let fuchsia = Color(red: 1.00, green: 0.18, blue: 0.61)
 }
 
-// قطاع حلقي (دونات)
 struct RingWedge: Shape {
     var startDeg: Double
     var endDeg: Double
@@ -24,11 +16,9 @@ struct RingWedge: Shape {
         let c = CGPoint(x: rect.midX, y: rect.midY)
         let rOuter = min(rect.width, rect.height) * 0.5
         let rInner = rOuter * innerRadiusFactor
-
         let g = gapDegrees * .pi / 180 / 2
-        let s = startDeg * .pi / 180 + g      // 0° عند اليمين
+        let s = startDeg * .pi / 180 + g
         let e = endDeg   * .pi / 180 - g
-
         var p = Path()
         p.addArc(center: c, radius: rOuter, startAngle: .radians(s), endAngle: .radians(e), clockwise: false)
         p.addLine(to: CGPoint(x: c.x + rInner * CGFloat(cos(e)), y: c.y + rInner * CGFloat(sin(e))))
@@ -44,15 +34,13 @@ struct WheelController: View {
     private let n = 7
     private let colors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple, .fuchsia]
     private let titles  = ["ANGRY","BAD","HAPPY","DISGUSTED","SAD","FEARFUL","SURPRISED"]
-
-    private let innerFactor: CGFloat = 0.58
-    private let gapDeg: Double = 5.0
-    private let explodeDistance: CGFloat = 18
-
+    
     @State private var selected: Int? = nil
     @State private var wheelRotation: Double = 0
     @State private var isZooming: Bool = false
     @State private var goDetail: Bool = false
+    @State private var showTechniquePage: Bool = false
+    @State private var showCompletionPage: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -64,11 +52,35 @@ struct WheelController: View {
                             titleTop: "You Picked",
                             mood: titles[i],
                             color: colors[i],
-                            onStart: { /* TODO */ }
+                            onStart: { showTechniquePage = true }
+                        )
+                    }
+                }
+                .navigationDestination(isPresented: $showTechniquePage) {
+                    // 1. Pass the selected color to the TechView
+                    if let i = selected {
+                        TechView(
+                            onDone: { showCompletionPage = true },
+                            backgroundColor: colors[i]
+                        )
+                    }
+                }
+                .navigationDestination(isPresented: $showCompletionPage) {
+                    // 2. Pass the selected color to the CompletionView as well
+                    if let i = selected {
+                        CompletionView(
+                            onDone: navigateBackToRoot,
+                            themeColor: colors[i]
                         )
                     }
                 }
         }
+    }
+    
+    private func navigateBackToRoot() {
+        showCompletionPage = false
+        showTechniquePage = false
+        goDetail = false
     }
 
     private var wheel: some View {
@@ -81,20 +93,18 @@ struct WheelController: View {
                 let rad   = mid * .pi / 180
 
                 let isSel = (selected == i)
-                let dx = isSel ? explodeDistance * CGFloat(cos(rad)) : 0
-                let dy = isSel ? explodeDistance * CGFloat(sin(rad)) : 0
+                let dx = isSel ? 18 * CGFloat(cos(rad)) : 0
+                let dy = isSel ? 18 * CGFloat(sin(rad)) : 0
 
-                RingWedge(startDeg: start, endDeg: end,
-                          innerRadiusFactor: innerFactor, gapDegrees: gapDeg)
+                RingWedge(startDeg: start, endDeg: end, innerRadiusFactor: 0.58, gapDegrees: 5.0)
                     .fill(colors[i])
-                    .compositingGroup() // مهم قبل الظل عشان ينعمل على الشكل كامل
-                    .shadow(color: .black.opacity(0.30), radius: 8, y: 4) // ظل تحت شرائح العجلة
+                    .compositingGroup()
+                    .shadow(color: .black.opacity(0.30), radius: 8, y: 4)
                     .overlay(
-                        RingWedge(startDeg: start, endDeg: end,
-                                  innerRadiusFactor: innerFactor, gapDegrees: gapDeg)
+                        RingWedge(startDeg: start, endDeg: end, innerRadiusFactor: 0.58, gapDegrees: 5.0)
                             .stroke(.white.opacity(0.9), lineWidth: 1)
                     )
-                    .offset(x: dx, y: dy)                    // انفجار
+                    .offset(x: dx, y: dy)
                     .scaleEffect(isSel && isZooming ? 2.0 : 1.0)
                     .zIndex(isSel && isZooming ? 1 : 0)
                     .onTapGesture { handleTap(index: i, mid: mid) }
@@ -107,25 +117,18 @@ struct WheelController: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.9), value: isZooming)
     }
 
-    /// انفجار → تدوير للأعلى → زوم → انتقال
     private func handleTap(index i: Int, mid: Double) {
         let already = (selected == i)
         selected = already ? nil : i
         guard !already else { return }
-
         let currentWorldAngle = mid + wheelRotation
         let delta = -90.0 - currentWorldAngle
         let normalizedDelta = ((delta + 180).truncatingRemainder(dividingBy: 360)) - 180
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
-                wheelRotation += normalizedDelta
-            }
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) { wheelRotation += normalizedDelta }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.28 + 0.55) {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                isZooming = true
-            }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) { isZooming = true }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.28 + 0.55 + 0.45) {
             goDetail = true
@@ -134,51 +137,35 @@ struct WheelController: View {
     }
 }
 
-// MARK: - Detail (Page 2)
-
 struct DetailScreen: View {
     let titleTop: String
     let mood: String
     let color: Color
     var onStart: () -> Void = {}
 
-    // ===== KNOBS =====
-    var titleTopPadding: CGFloat = 330      // ↓ نزّل النص فقط
-    var heroTop: CGFloat = 570             // ↓ نزّل الشكل (مستقل عن النص)
-    var heroDiameter: CGFloat = 750        // حجم الشكل
-    var sliceSpanDeg: Double = 85          // عرض المثلث
-    var sliceInnerFactor: CGFloat = 0.20   // سماكة: أصغر = أسمك
-
-    // المثلثات الرمادية (لصق + ميل):
-    var neighborsSpanScale: Double = 0.88  // نسبة عرض الجار
-    var neighborsGapDeg: Double = 1.5      // فجوة صغيرة (التصاق)
-    var neighborsOffsetDeg: Double = -6     // ميل يمين/يسار
-
-    // الإضاءة الخلفية:
+    var titleTopPadding: CGFloat = 330
+    var heroTop: CGFloat = 570
+    var heroDiameter: CGFloat = 750
+    var sliceSpanDeg: Double = 85
+    var sliceInnerFactor: CGFloat = 0.20
+    var neighborsSpanScale: Double = 0.88
+    var neighborsGapDeg: Double = 1.5
+    var neighborsOffsetDeg: Double = -6
     var glowOpacity: Double = 0.35
     var glowBlur: CGFloat = 55
-
-    // الدائرة + الزر:
     var bottomCircleScale: CGFloat = 1.2
-    // KNOB
-    var bottomYOffsetFactor: CGFloat = 0.93  // جرّب 0.68 أو 0.72
-    var startButtonOffset: CGFloat = 280    // ↓ نزّل زر START
-    // ==================
+    var bottomYOffsetFactor: CGFloat = 0.93
+    var startButtonOffset: CGFloat = 280
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
             Color(.systemBackground).ignoresSafeArea()
-
-            // نص وهدَر بطبقة
             ZStack(alignment: .top) {
-                // الشكل بطبقة مستقلة ومثبت من الأعلى
                 hero
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .padding(.top, heroTop)
-
-                // الهيدر + النص (لا يحرّك الشكل)
                 VStack(spacing: 8) {
                     HStack {
                         Button(action: { dismiss() }) {
@@ -195,16 +182,12 @@ struct DetailScreen: View {
                         Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
                     }
                 }
-                .padding(.top, titleTopPadding) // ← يحرك النص فقط
+                .padding(.top, titleTopPadding)
             }
-
-            // نصف دائرة + زر (Overlay سفلي مستقل)
             bottomOverlay
         }
         .navigationBarBackButtonHidden(true)
     }
-
-    // MARK: - Pieces
 
     private var hero: some View {
         ZStack {
@@ -212,32 +195,24 @@ struct DetailScreen: View {
             let start = -90.0 - span/2
             let end   = -90.0 + span/2
             let nSpan = span * neighborsSpanScale
-
-            // Glow خلفي
             Circle()
                 .fill(color.opacity(glowOpacity))
                 .frame(width: heroDiameter * 0.9, height: heroDiameter * 0.9)
                 .blur(radius: glowBlur)
                 .blendMode(.plusLighter)
                 .offset(y: 8)
-
-            // جار يسار (ملاصق مع تحكم الميل)
             RingWedge(startDeg: start - neighborsOffsetDeg - nSpan,
                       endDeg:   start - neighborsOffsetDeg,
                       innerRadiusFactor: sliceInnerFactor,
                       gapDegrees: neighborsGapDeg)
                 .fill(Color.black.opacity(0.16))
                 .frame(width: heroDiameter, height: heroDiameter)
-
-            // جار يمين
             RingWedge(startDeg: end + neighborsOffsetDeg,
                       endDeg:   end + neighborsOffsetDeg + nSpan,
                       innerRadiusFactor: sliceInnerFactor,
                       gapDegrees: neighborsGapDeg)
                 .fill(Color.black.opacity(0.16))
                 .frame(width: heroDiameter, height: heroDiameter)
-
-            // المثلث الأساسي
             RingWedge(startDeg: start, endDeg: end,
                       innerRadiusFactor: sliceInnerFactor, gapDegrees: 20)
                 .fill(color)
@@ -265,10 +240,157 @@ struct DetailScreen: View {
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .offset(y: startButtonOffset) // ← نزول الزر فعليًا
+            .offset(y: startButtonOffset)
         }
         .ignoresSafeArea(edges: .bottom)
     }
 }
 
-#Preview { WheelController() }
+
+// MARK: - Technique (Page 3)
+
+struct TechView: View {
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var currentPage = 0
+    var onDone: () -> Void = {}
+    
+    // 1. Add a property to accept the background color
+    var backgroundColor: Color = Color(red: 0.90, green: 1.0, blue: 0.90)
+
+    private let pages = [
+        "Focus on your body and thoughts", "Take deep breaths and relax",
+        "Clear your mind and meditate", "Journal your thoughts and feelings"
+    ]
+
+    var body: some View {
+        ZStack {
+            // 2. Use the passed-in color for the background
+            backgroundColor.opacity(0.25).ignoresSafeArea()
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    if currentPage == pages.count - 1 {
+                        Button {
+                            hasSeenOnboarding = true
+                            onDone()
+                        } label: {
+                            Text("Done").fontWeight(.medium).foregroundColor(.primary) // Use .primary for better contrast
+                        }
+                        .padding(.trailing, 20)
+                    }
+                }
+                .padding(.top, 20).frame(height: 50)
+                
+                TabView(selection: $currentPage) {
+                    ForEach(0..<pages.count, id: \.self) { i in
+                        VStack {
+                            Spacer()
+                            Image(systemName: "leaf.fill").resizable().scaledToFit()
+                                .frame(maxHeight: 200).foregroundColor(.secondary).padding(.bottom, 50)
+                            Text(pages[i]).font(.system(size: 22, weight: .medium))
+                                .multilineTextAlignment(.center).foregroundColor(.primary)
+                                .padding(.horizontal, 70)
+                            Spacer()
+                        }.tag(i)
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                
+                HStack(spacing: 8) {
+                    ForEach(0..<pages.count, id: \.self) { i in
+                        Circle().fill(i == currentPage ? Color.primary : Color.secondary.opacity(0.4))
+                            .frame(width: 8, height: 8)
+                            .onTapGesture { withAnimation { currentPage = i } }
+                    }
+                }
+                .padding(.bottom, 40)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+}
+
+
+// MARK: - Confetti Views
+
+struct ConfettiPiece: View {
+    @State private var yPos: CGFloat = .random(in: -200...0)
+    @State private var xPos: CGFloat = .random(in: -20...20)
+    @State private var rotation = Angle.degrees(.random(in: 0...360))
+    @State private var opacity: Double = 0.0
+
+    let color: Color = [.blue, .red, .green, .yellow, .purple, .orange].randomElement()!
+    let duration = Double.random(in: 2.5...4.0)
+
+    var body: some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: 10, height: 10)
+            .rotationEffect(rotation, anchor: .center)
+            .offset(x: xPos, y: yPos)
+            .opacity(opacity)
+            .onAppear {
+                withAnimation(.linear(duration: 0.2)) { opacity = 1.0 }
+                withAnimation(.linear(duration: duration).delay(0.1)) {
+                    yPos = 800
+                    xPos += .random(in: -150...150)
+                    rotation += Angle(degrees: .random(in: 360...1080))
+                }
+                withAnimation(.linear(duration: 1.0).delay(duration - 1.0)) { opacity = 0 }
+            }
+    }
+}
+
+struct ConfettiView: View {
+    var body: some View {
+        ZStack {
+            ForEach(0..<150) { _ in ConfettiPiece() }
+        }
+    }
+}
+
+// MARK: - Completion View (Page 4)
+
+struct CompletionView: View {
+    var onDone: () -> Void = {}
+    
+    // 1. Add a property to accept the theme color
+    var themeColor: Color = .green
+
+    var body: some View {
+        ZStack {
+            // 2. Use the passed-in color for the background
+            themeColor.opacity(0.15).ignoresSafeArea()
+
+            ConfettiView()
+
+            VStack(spacing: 16) {
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 80))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, themeColor) // Use the theme color for the star
+                
+                Text("Congratulations!")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text("You have successfully completed the technique.")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done", action: onDone).fontWeight(.semibold)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+}
+
+#Preview {
+    WheelController()
+}
