@@ -30,42 +30,11 @@ struct RingWedge: Shape {
 
 // MARK: - Wheel (Page 1)
 
-import SwiftUI
-
 struct WheelController: View {
     private let n = 7
     private let colors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple, .fuchsia]
     private let titles  = ["ANGRY","BAD","HAPPY","DISGUSTED","SAD","FEARFUL","SURPRISED"]
-
-    // ---- TEXT & LAYOUT KNOBS (عدّل براحتك) ----
-    // أعلى اليسار
-    private let iFeelText: String = "iFeel"
-    private let iFeelFontSize: CGFloat = 25
-    private let iFeelTopPadding: CGFloat = 20
-    private let iFeelLeadingPadding: CGFloat = 30
-
-    // النص فوق العجلة
-    private let promptTopText: String = "How Do You"
-    private let promptTopSize: CGFloat = 55
-    private let promptTopOffsetY: CGFloat = -50      // + ينزل / - يطلع
-
-    // النص تحت العجلة
-    private let promptBottomText: String = "Feel?"
-    private let promptBottomSize: CGFloat = 55
-    private let promptBottomOffsetY: CGFloat = 44   // + ينزل / - يطلع
-
-    // الدائرة البيضاء داخل العجلة + نصها
-    private let hubDiameter: CGFloat = 0          // حجم الدائرة البيضاء
-    private let hubOffsetY: CGFloat = 0            // تحريك الدائرة عموديًا
-    private let hubText: String = "Tab"            // لو قصدك Tap غيّرها هنا
-    private let hubTextSize: CGFloat = 33
-
-    // ترتيب عام للستاك
-    private let wheelStackTopPadding: CGFloat = 24 // يبعد كل المجموعة عن أعلى الشاشة
-    private let wheelStackSpacing: CGFloat = 12    // المسافة بين العناصر الثلاثة
-    // -------------------------------------------
-
-    // (نفس حالاتك السابقة)
+    
     @State private var selected: Int? = nil
     @State private var wheelRotation: Double = 0
     @State private var isZooming: Bool = false
@@ -75,79 +44,45 @@ struct WheelController: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .topLeading) {
-                // iFeel أعلى اليسار
-                Text(iFeelText)
-                    .font(.system(size: iFeelFontSize, weight: .semibold))
-                    .padding(.top, iFeelTopPadding)
-                    .padding(.leading, iFeelLeadingPadding)
-
-                // العناوين + العجلة + العنوان السفلي
-                VStack(spacing: wheelStackSpacing) {
-                    Text(promptTopText)
-                        .font(.system(size: promptTopSize, weight: .regular))
-                        .offset(y: promptTopOffsetY)
-
-                    // مركز العجلة: دائرة بيضاء + العجلة + نص "Tab"
-                    ZStack {
-                        // الدائرة البيضاء خلف العجلة (تظهر من ثقب الدونات)
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: hubDiameter, height: hubDiameter)
-                            .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
-                            .offset(y: hubOffsetY)
-
-                        // العجلة نفسها
-                        wheel
-
-                        // نص داخل الدائرة — ما يمنع اللمس على الشرائح
-                        Text(hubText)
-                            .font(.system(size: hubTextSize, weight: .semibold))
-                            .offset(y: hubOffsetY)
-                            .allowsHitTesting(false)
+            ZStack { wheel }
+                .padding()
+                .navigationDestination(isPresented: $goDetail) {
+                    if let i = selected {
+                        DetailScreen(
+                            titleTop: "You Picked",
+                            mood: titles[i],
+                            color: colors[i],
+                            onStart: { showTechniquePage = true }
+                        )
                     }
-
-                    Text(promptBottomText)
-                        .font(.system(size: promptBottomSize, weight: .bold))
-                        .offset(y: promptBottomOffsetY)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal)
-                .padding(.top, wheelStackTopPadding)
-            }
-            // نفس سلسة التنقّلات التي كانت عندك
-            .navigationDestination(isPresented: $goDetail) {
-                if let i = selected {
-                    DetailScreen(
-                        titleTop: "You Picked",
-                        mood: titles[i],
-                        color: colors[i],
-                        onStart: { showTechniquePage = true }
-                    )
+                .navigationDestination(isPresented: $showTechniquePage) {
+                    // 1. Pass the selected color to the TechView
+                    if let i = selected {
+                        TechView(
+                            onDone: { showCompletionPage = true },
+                            backgroundColor: colors[i]
+                        )
+                    }
                 }
-            }
-            .navigationDestination(isPresented: $showTechniquePage) {
-                if let i = selected {
-                    TechView(onDone: { showCompletionPage = true },
-                             backgroundColor: colors[i])
+                .navigationDestination(isPresented: $showCompletionPage) {
+                    // 2. Pass the selected color to the CompletionView as well
+                    if let i = selected {
+                        CompletionView(
+                            onDone: navigateBackToRoot,
+                            themeColor: colors[i]
+                        )
+                    }
                 }
-            }
-            .navigationDestination(isPresented: $showCompletionPage) {
-                if let i = selected {
-                    CompletionView(onDone: navigateBackToRoot,
-                                   themeColor: colors[i])
-                }
-            }
         }
     }
-
+    
     private func navigateBackToRoot() {
         showCompletionPage = false
         showTechniquePage = false
         goDetail = false
     }
 
-    // نفس العجلة كما هي
     private var wheel: some View {
         let step = 360.0 / Double(n)
         return ZStack {
@@ -161,14 +96,12 @@ struct WheelController: View {
                 let dx = isSel ? 18 * CGFloat(cos(rad)) : 0
                 let dy = isSel ? 18 * CGFloat(sin(rad)) : 0
 
-                RingWedge(startDeg: start, endDeg: end,
-                          innerRadiusFactor: 0.58, gapDegrees: 5.0)
+                RingWedge(startDeg: start, endDeg: end, innerRadiusFactor: 0.58, gapDegrees: 5.0)
                     .fill(colors[i])
                     .compositingGroup()
                     .shadow(color: .black.opacity(0.30), radius: 8, y: 4)
                     .overlay(
-                        RingWedge(startDeg: start, endDeg: end,
-                                  innerRadiusFactor: 0.58, gapDegrees: 5.0)
+                        RingWedge(startDeg: start, endDeg: end, innerRadiusFactor: 0.58, gapDegrees: 5.0)
                             .stroke(.white.opacity(0.9), lineWidth: 1)
                     )
                     .offset(x: dx, y: dy)
@@ -188,20 +121,14 @@ struct WheelController: View {
         let already = (selected == i)
         selected = already ? nil : i
         guard !already else { return }
-
         let currentWorldAngle = mid + wheelRotation
         let delta = -90.0 - currentWorldAngle
         let normalizedDelta = ((delta + 180).truncatingRemainder(dividingBy: 360)) - 180
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
-                wheelRotation += normalizedDelta
-            }
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) { wheelRotation += normalizedDelta }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.28 + 0.55) {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                isZooming = true
-            }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) { isZooming = true }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.28 + 0.55 + 0.45) {
             goDetail = true
@@ -209,7 +136,6 @@ struct WheelController: View {
         }
     }
 }
-
 
 struct DetailScreen: View {
     let titleTop: String
@@ -231,6 +157,8 @@ struct DetailScreen: View {
     var bottomYOffsetFactor: CGFloat = 0.93
     var startButtonOffset: CGFloat = 280
 
+    
+    @State var shouldNav : Bool = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -305,7 +233,10 @@ struct DetailScreen: View {
                 .offset(y: UIScreen.main.bounds.width * bottomYOffsetFactor)
                 .shadow(color: .black.opacity(0.08), radius: 16, y: -4)
 
-            Button(action: onStart) {
+            
+            Button {
+                shouldNav.toggle()
+            } label: {
                 Text("START")
                     .font(.system(size: 22, weight: .semibold))
                     .padding(.horizontal, 36)
@@ -313,10 +244,23 @@ struct DetailScreen: View {
                     .background(color)
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .offset(y: startButtonOffset)
+            }.offset(y: startButtonOffset)
+            
+
+//            Button(action: onStart) {
+//                Text("START")
+//                    .font(.system(size: 22, weight: .semibold))
+//                    .padding(.horizontal, 36)
+//                    .padding(.vertical, 14)
+//                    .background(color)
+//                    .foregroundStyle(.white)
+//                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+          //  }.
         }
         .ignoresSafeArea(edges: .bottom)
+        .navigationDestination(isPresented: $shouldNav) {
+            MindOnboardingView()
+        }
     }
 }
 
