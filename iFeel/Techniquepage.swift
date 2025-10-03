@@ -101,7 +101,7 @@ struct MindOnboardingView: View {
                         Spacer()
 
                         NavigationLink {
-                            ConfettiView()
+                            CompletionView()
                                 .onAppear{
                                    // hasSeenOnboarding = true
                                 }
