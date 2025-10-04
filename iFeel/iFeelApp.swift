@@ -11,8 +11,7 @@ import SwiftUI
 struct iFeelApp: App {
     var body: some Scene {
         WindowGroup {
-//            ContentView()
-            DonutView()
+            WheelController()
         }
     }
 }

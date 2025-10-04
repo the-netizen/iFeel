@@ -373,23 +373,23 @@ struct ConfettiView: View {
 struct CompletionView: View {
     var onDone: () -> Void = {}
     
-    // 1. Add a property to accept the theme color
-    var themeColor: Color = .green
+    
+    var themeColor: Color = .black
 
     var body: some View {
         ZStack {
-            // 2. Use the passed-in color for the background
-            themeColor.opacity(0.15).ignoresSafeArea()
-
+            
+            Color.white.ignoresSafeArea()
+            
             ConfettiView()
 
             VStack(spacing: 16) {
                 Image(systemName: "star.circle.fill")
                     .font(.system(size: 80))
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, themeColor) // Use the theme color for the star
+                    .foregroundStyle(.white, themeColor)
                 
-                Text("Congratulations!")
+                Text("Well Done!")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
@@ -402,7 +402,11 @@ struct CompletionView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Done", action: onDone).fontWeight(.semibold)
+                Button(action: onDone){
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
