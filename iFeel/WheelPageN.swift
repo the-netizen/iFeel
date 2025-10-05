@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Helpers
+// MARK: - 1. Helpers
 
 extension Color {
     static let fuchsia = Color(red: 1.00, green: 0.18, blue: 0.61)
@@ -28,7 +28,124 @@ struct RingWedge: Shape {
     }
 }
 
-// MARK: - Wheel (Page 1)
+// MARK: - 2. DetailScreen (Page 2) - Must be defined BEFORE WheelController
+
+struct DetailScreen: View {
+    let titleTop: String
+    let mood: String
+    let color: Color
+    var onStart: () -> Void = {} // This closure navigates to TechView
+
+    // Layout parameters
+    var titleTopPadding: CGFloat = 330
+    var heroTop: CGFloat = 570
+    var heroDiameter: CGFloat = 750
+    var sliceSpanDeg: Double = 85
+    var sliceInnerFactor: CGFloat = 0.20
+    var neighborsSpanScale: Double = 0.88
+    var neighborsGapDeg: Double = 1.5
+    var neighborsOffsetDeg: Double = -6
+    var glowOpacity: Double = 0.35
+    var glowBlur: CGFloat = 55
+    var bottomCircleScale: CGFloat = 1.2
+    var bottomYOffsetFactor: CGFloat = 0.93
+    var startButtonOffset: CGFloat = 280
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color(.systemBackground).ignoresSafeArea()
+            ZStack(alignment: .top) {
+                hero
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, heroTop)
+                VStack(spacing: 8) {
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        .tint(.primary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+
+                    VStack(spacing: 6) {
+                        Text(titleTop)
+                        .font(Font.custom("Comfortaa-Bold", size: 28)) // Apply Comfortaa font
+                        .fontWeight(.heavy)
+                        Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
+                    }
+                }
+                .padding(.top, titleTopPadding)
+            }
+            bottomOverlay
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+
+    private var hero: some View {
+        // ... (Hero view is unchanged)
+        ZStack {
+            let span = sliceSpanDeg
+            let start = -90.0 - span/2
+            let end   = -90.0 + span/2
+            let nSpan = span * neighborsSpanScale
+            Circle()
+                .fill(color.opacity(glowOpacity))
+                .frame(width: heroDiameter * 0.9, height: heroDiameter * 0.9)
+                .blur(radius: glowBlur)
+                .blendMode(.plusLighter)
+                .offset(y: 8)
+            RingWedge(startDeg: start - neighborsOffsetDeg - nSpan,
+                      endDeg:   start - neighborsOffsetDeg,
+                      innerRadiusFactor: sliceInnerFactor,
+                      gapDegrees: neighborsGapDeg)
+                .fill(Color.black.opacity(0.16))
+                .frame(width: heroDiameter, height: heroDiameter)
+            RingWedge(startDeg: end + neighborsOffsetDeg,
+                      endDeg:   end + neighborsOffsetDeg + nSpan,
+                      innerRadiusFactor: sliceInnerFactor,
+                      gapDegrees: neighborsGapDeg)
+                .fill(Color.black.opacity(0.16))
+                .frame(width: heroDiameter, height: heroDiameter)
+            RingWedge(startDeg: start, endDeg: end,
+                      innerRadiusFactor: sliceInnerFactor, gapDegrees: 20)
+                .fill(color)
+                .frame(width: heroDiameter, height: heroDiameter)
+                .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+        }
+        .frame(height: heroDiameter)
+    }
+
+    private var bottomOverlay: some View {
+        ZStack {
+            Circle()
+                .fill(Color.white)
+                .frame(width: UIScreen.main.bounds.width * bottomCircleScale,
+                       height: UIScreen.main.bounds.width * bottomCircleScale)
+                .offset(y: UIScreen.main.bounds.width * bottomYOffsetFactor)
+                .shadow(color: .black.opacity(0.08), radius: 16, y: -4)
+
+            // 🛠️ FIX 3: Use the correct onStart action for navigation
+            Button(action: onStart) {
+                Text("START")
+                    .font(Font.custom("comfortaa-bold", size: 22))
+                    .padding(.horizontal, 36)
+                    .padding(.vertical, 14)
+                    .background(color)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .offset(y: startButtonOffset)
+        }
+        .ignoresSafeArea(edges: .bottom)
+        // Removed .navigationDestination(isPresented: $shouldNav) to ensure clean flow
+    }
+}
+
+// MARK: - 3. WheelController (Page 1)
 
 struct WheelController: View {
     private let n = 7
@@ -71,7 +188,7 @@ struct WheelController: View {
             
                 .navigationDestination(isPresented: $goDetail) {
                     if let i = selected {
-                        DetailScreen(
+                        DetailScreen( // DetailScreen is now defined above, so no error here
                             titleTop: "You Picked",
                             mood: titles[i],
                             color: colors[i],
@@ -79,17 +196,22 @@ struct WheelController: View {
                         )
                     }
                 }
+                // 🛠️ FIX 1: Passes all required data to the new TechView
                 .navigationDestination(isPresented: $showTechniquePage) {
-                    // 1. Pass the selected color to the TechView
                     if let i = selected {
-                        TechView(
-                            onDone: { showCompletionPage = true },
-                            backgroundColor: colors[i]
+                        let mood = titles[i] // Get the selected mood name
+                        let data = getTechniqueData(for: mood) // Get the mapped technique
+                        
+                        TechView( // TechView is defined below, which is okay in Swift's single-file context
+                            moodTitle: mood,
+                            techniqueText: data.text,
+                            techniqueIcon: data.icon,
+                            backgroundColor: colors[i],
+                            onDone: { showCompletionPage = true }
                         )
                     }
                 }
                 .navigationDestination(isPresented: $showCompletionPage) {
-                    // 2. Pass the selected color to the CompletionView as well
                     if let i = selected {
                         CompletionView(
                             onDone: navigateBackToRoot,
@@ -105,6 +227,28 @@ struct WheelController: View {
         showCompletionPage = false
         showTechniquePage = false
         goDetail = false
+    }
+
+    // 🛠️ FIX 1 (Helper): Maps the emotion to the correct technique text and icon
+    private func getTechniqueData(for mood: String) -> (text: String, icon: String) {
+        switch mood.uppercased() {
+        case "ANGRY":
+            return ("Take deep breaths and practice grounding techniques", "flame.fill")
+        case "SAD":
+            return ("Clear your mind and meditate", "figure.mind.and.body")
+        case "HAPPY":
+            return ("Journal your gratitudes and share a smile", "face.smiling.fill")
+        case "FEARFUL":
+            return ("Focus on your body and thoughts to stay present", "eye.fill")
+        case "SURPRISED":
+            return ("Take a moment to process the sudden change", "sparkles")
+        case "DISGUSTED":
+            return ("Identify the source of disgust and practice self-care", "hand.thumbsdown.fill")
+        case "BAD":
+            return ("Take a walk and notice 5 things around you", "figure.walk")
+        default:
+            return ("Focus on your current emotional state", "leaf.fill")
+        }
     }
 
     private var wheel: some View {
@@ -207,192 +351,71 @@ struct WheelController: View {
     }
 }
 
-struct DetailScreen: View {
-    let titleTop: String
-    let mood: String
-    let color: Color
-    var onStart: () -> Void = {}
-
-    var titleTopPadding: CGFloat = 330
-    var heroTop: CGFloat = 570
-    var heroDiameter: CGFloat = 750
-    var sliceSpanDeg: Double = 85
-    var sliceInnerFactor: CGFloat = 0.20
-    var neighborsSpanScale: Double = 0.88
-    var neighborsGapDeg: Double = 1.5
-    var neighborsOffsetDeg: Double = -6
-    var glowOpacity: Double = 0.35
-    var glowBlur: CGFloat = 55
-    var bottomCircleScale: CGFloat = 1.2
-    var bottomYOffsetFactor: CGFloat = 0.93
-    var startButtonOffset: CGFloat = 280
-
-    
-    @State var shouldNav : Bool = false
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        ZStack {
-            Color(.systemBackground).ignoresSafeArea()
-            ZStack(alignment: .top) {
-                hero
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.top, heroTop)
-                VStack(spacing: 8) {
-                    HStack {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 18, weight: .semibold))
-                        }
-                        .tint(.primary)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-
-                    VStack(spacing: 6) {
-                        Text(titleTop).font(.system(size: 28, weight: .medium))
-                        Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
-                    }
-                }
-                .padding(.top, titleTopPadding)
-            }
-            bottomOverlay
-        }
-        .navigationBarBackButtonHidden(true)
-    }
-
-    private var hero: some View {
-        ZStack {
-            let span = sliceSpanDeg
-            let start = -90.0 - span/2
-            let end   = -90.0 + span/2
-            let nSpan = span * neighborsSpanScale
-            Circle()
-                .fill(color.opacity(glowOpacity))
-                .frame(width: heroDiameter * 0.9, height: heroDiameter * 0.9)
-                .blur(radius: glowBlur)
-                .blendMode(.plusLighter)
-                .offset(y: 8)
-            RingWedge(startDeg: start - neighborsOffsetDeg - nSpan,
-                      endDeg:   start - neighborsOffsetDeg,
-                      innerRadiusFactor: sliceInnerFactor,
-                      gapDegrees: neighborsGapDeg)
-                .fill(Color.black.opacity(0.16))
-                .frame(width: heroDiameter, height: heroDiameter)
-            RingWedge(startDeg: end + neighborsOffsetDeg,
-                      endDeg:   end + neighborsOffsetDeg + nSpan,
-                      innerRadiusFactor: sliceInnerFactor,
-                      gapDegrees: neighborsGapDeg)
-                .fill(Color.black.opacity(0.16))
-                .frame(width: heroDiameter, height: heroDiameter)
-            RingWedge(startDeg: start, endDeg: end,
-                      innerRadiusFactor: sliceInnerFactor, gapDegrees: 20)
-                .fill(color)
-                .frame(width: heroDiameter, height: heroDiameter)
-                .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
-        }
-        .frame(height: heroDiameter)
-    }
-
-    private var bottomOverlay: some View {
-        ZStack {
-            Circle()
-                .fill(Color.white)
-                .frame(width: UIScreen.main.bounds.width * bottomCircleScale,
-                       height: UIScreen.main.bounds.width * bottomCircleScale)
-                .offset(y: UIScreen.main.bounds.width * bottomYOffsetFactor)
-                .shadow(color: .black.opacity(0.08), radius: 16, y: -4)
-
-            
-            Button {
-                shouldNav.toggle()
-            } label: {
-                Text("START")
-                    .font(.system(size: 22, weight: .semibold))
-                    .padding(.horizontal, 36)
-                    .padding(.vertical, 14)
-                    .background(color)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }.offset(y: startButtonOffset)
-            
-
-//            Button(action: onStart) {
-//                Text("START")
-//                    .font(.system(size: 22, weight: .semibold))
-//                    .padding(.horizontal, 36)
-//                    .padding(.vertical, 14)
-//                    .background(color)
-//                    .foregroundStyle(.white)
-//                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-          //  }.
-        }
-        .ignoresSafeArea(edges: .bottom)
-        .navigationDestination(isPresented: $shouldNav) {
-            MindOnboardingView()
-        }
-    }
-}
-
-
-// MARK: - Technique (Page 3)
+// MARK: - 4. Technique (Page 3)
 
 struct TechView: View {
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
-    @State private var currentPage = 0
-    var onDone: () -> Void = {}
+    @Environment(\.dismiss) private var dismiss // Used to navigate back
     
-    // 1. Add a property to accept the background color
-    var backgroundColor: Color = Color(red: 0.90, green: 1.0, blue: 0.90)
+    // Properties to receive the specific mood data from WheelController
+    let moodTitle: String
+    let techniqueText: String
+    let techniqueIcon: String
+    var backgroundColor: Color
 
-    private let pages = [
-        "Focus on your body and thoughts", "Take deep breaths and relax",
-        "Clear your mind and meditate", "Journal your thoughts and feelings"
-    ]
-
+    var onDone: () -> Void = {} // Action to navigate to the CompletionView
+    
     var body: some View {
         ZStack {
-            // 2. Use the passed-in color for the background
+            // Background is set using the passed-in color
             backgroundColor.opacity(0.25).ignoresSafeArea()
             
-            VStack {
-                HStack {
-                    Spacer()
-                    if currentPage == pages.count - 1 {
-                        Button {
-                            hasSeenOnboarding = true
-                            onDone()
-                        } label: {
-                            Text("Done").fontWeight(.medium).foregroundColor(.primary) // Use .primary for better contrast
-                        }
-                        .padding(.trailing, 20)
-                    }
-                }
-                .padding(.top, 20).frame(height: 50)
+            VStack(spacing: 40) {
+                Spacer()
                 
-                TabView(selection: $currentPage) {
-                    ForEach(0..<pages.count, id: \.self) { i in
-                        VStack {
-                            Spacer()
-                            Image(systemName: "leaf.fill").resizable().scaledToFit()
-                                .frame(maxHeight: 200).foregroundColor(.secondary).padding(.bottom, 50)
-                            Text(pages[i]).font(.system(size: 22, weight: .medium))
-                                .multilineTextAlignment(.center).foregroundColor(.primary)
-                                .padding(.horizontal, 70)
-                            Spacer()
-                        }.tag(i)
-                    }
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                // Display the selected emotion title
+                Text(moodTitle)
+                    .font(.system(size: 60, weight: .heavy))
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
                 
-                HStack(spacing: 8) {
-                    ForEach(0..<pages.count, id: \.self) { i in
-                        Circle().fill(i == currentPage ? Color.primary : Color.secondary.opacity(0.4))
-                            .frame(width: 8, height: 8)
-                            .onTapGesture { withAnimation { currentPage = i } }
-                    }
+                // Display the icon for the specific technique
+                Image(systemName: techniqueIcon).resizable().scaledToFit()
+                    .frame(maxHeight: 200)
+                    .foregroundColor(backgroundColor) // Icon color matches the emotion color
+                    .padding(.bottom, 30)
+                
+                // Display the correct technique text
+                Text(techniqueText)
+                    .font(Font.custom("Comfortaa-bold", size: 26))
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 40)
+                
+                Spacer()
+                
+                // Single dot (as a placeholder for old pagination)
+                Circle()
+                    .fill(Color.primary)
+                    .frame(width: 8, height: 8)
+                    .padding(.bottom, 40)
+            }
+        }
+        // 🛠️ FIX 2: Proper button alignment using ToolbarItem
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
                 }
-                .padding(.bottom, 40)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") {
+                    onDone()
+                }
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -400,7 +423,9 @@ struct TechView: View {
 }
 
 
-// MARK: - Confetti Views
+// MARK: - 5. Confetti Views
+
+// (No changes needed here)
 
 struct ConfettiPiece: View {
     @State private var yPos: CGFloat = .random(in: -200...0)
@@ -438,12 +463,10 @@ struct ConfettiView: View {
     }
 }
 
-// MARK: - Completion View (Page 4)
+// MARK: - 6. Completion View (Page 4)
 
 struct CompletionView: View {
     var onDone: () -> Void = {}
-    
-    
     var themeColor: Color = .black
 
     var body: some View {
@@ -460,11 +483,12 @@ struct CompletionView: View {
                     .foregroundStyle(.white, themeColor)
                 
                 Text("Well Done!")
-                    .font(.largeTitle)
+                    .font(.custom("Comfortaa-Bold", size: 34))  // Make sure the font name is correct
                     .fontWeight(.bold)
                 
                 Text("You have successfully completed the technique.")
-                    .font(.title3)
+    
+                    .font(.custom("Comfortaa-Bold", size: 20))  // Make sure the font name is correct
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -472,10 +496,11 @@ struct CompletionView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onDone){
+                Button(action: onDone) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(. black)  // Change color to black
+                    
                 }
             }
         }
