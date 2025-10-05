@@ -74,7 +74,7 @@ struct DetailScreen: View {
                     .padding(.horizontal)
 
                     VStack(spacing: 6) {
-                        Text(titleTop).font(.system(size: 28, weight: .medium))
+                        Text(titleTop).font(Font.custom("Comfortaa-bold", size: 28))
                         Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
                     }
                 }
@@ -134,7 +134,7 @@ struct DetailScreen: View {
 
             Button(action: onStart) {
                 Text("START")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(Font.custom("Comfortaa-bold", size: 22))
                     .padding(.horizontal, 36)
                     .padding(.vertical, 14)
                     .background(color)
@@ -186,13 +186,13 @@ struct WheelController: View {
         NavigationStack {
             ZStack(alignment: .topLeading) {
                 Text(iFeelText)
-                    .font(.system(size: iFeelFontSize, weight: .semibold))
+                    .font(Font.custom("Comfortaa-bold", size: 30))
                     .padding(.top, iFeelTopPadding)
                     .padding(.leading, iFeelLeadingPadding)
 
                 VStack(spacing: wheelStackSpacing) {
                     Text(promptTopText)
-                        .font(.system(size: promptTopSize, weight: .regular))
+                        .font(Font.custom("Comfortaa-bold", size: 50))
                         .offset(y: promptTopOffsetY)
 
                     ZStack {
@@ -203,7 +203,7 @@ struct WheelController: View {
                                 .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
                                 .offset(y: hubOffsetY)
                             Text(hubText)
-                                .font(.system(size: hubTextSize, weight: .semibold))
+                                .font(Font.custom("Comfortaa-bold", size: 30))
                                 .offset(y: hubOffsetY)
                                 .allowsHitTesting(false)
                         }
@@ -212,7 +212,7 @@ struct WheelController: View {
 
                     // Feel? بنفس وزن الأعلى (مش بولد)
                     Text(promptBottomText)
-                        .font(.system(size: promptBottomSize, weight: .regular))
+                        .font(Font.custom("Comfortaa-bold", size: 55))
                         .offset(y: promptBottomOffsetY)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -451,7 +451,7 @@ struct TechView: View {
                     Button { dismiss() } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "chevron.left").font(.system(size: 18, weight: .semibold))
-                            Text("Back").font(.system(size: 17, weight: .semibold))
+                            
                         }
                     }
                     .foregroundStyle(.black)
@@ -466,7 +466,7 @@ struct TechView: View {
                 Spacer(minLength: 10)
 
                 Text(moodTitle)
-                    .font(.largeTitle).fontWeight(.bold)
+                    .font(Font.custom("Comfortaa-bold", size: 35))
                     .foregroundColor(.primary)
 
                 Image(systemName: current.icon)
@@ -476,7 +476,7 @@ struct TechView: View {
                     .padding(.bottom, 12)
 
                 Text(current.text)
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(Font.custom("Comfortaa-bold", size: 28))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.primary)
                     .padding(.horizontal, 36)
@@ -630,11 +630,11 @@ struct CompletionView: View {
                     .foregroundStyle(.white, themeColor)
 
                 Text("Well Done!")
-                    .font(.largeTitle)
+                    .font(Font.custom("Comfortaa-bold", size: 42))
                     .fontWeight(.bold)
 
                 Text("You have successfully completed the technique.")
-                    .font(.title3)
+                    .font(Font.custom("Comfortaa-bold", size: 22))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
