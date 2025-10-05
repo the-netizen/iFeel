@@ -109,7 +109,7 @@ struct WheelController: View {
 
     private var wheel: some View {
         let step = 360.0 / Double(n)
-        let labelOffset: CGFloat = 100
+//        let labelOffset: CGFloat = 85
         
         return ZStack {
             ForEach(0..<n, id: \.self) { i in
@@ -121,7 +121,10 @@ struct WheelController: View {
                 let isSel = (selected == i)
                 let dx = isSel ? 18 * CGFloat(cos(rad)) : 0
                 let dy = isSel ? 18 * CGFloat(sin(rad)) : 0
-                let radialRotation = Angle(degrees: mid + 90) // text rotation
+                // text rotation
+                let textRotation = Angle(degrees: mid/90)
+//                let radialRotation = Angle(degrees: mid + 90)
+                //                let radialRotation = Angle(degrees: (mid + 90) + (mid > 90 && mid < 270 ? 180 : 0))
                 
                 
                 RingWedge(startDeg: start, endDeg: end, innerRadiusFactor: 0.58, gapDegrees: 5.0)
@@ -138,28 +141,42 @@ struct WheelController: View {
                     .onTapGesture { handleTap(index: i, mid: mid)
                     }
                 
+//                TEXT ROTATION
                 
-                //                Text(feelings[i])
-                //                    .foregroundColor(.black)
-                //                    .offset(x: 100 * CGFloat(cos(rad)),
-                //                            y:100 * CGFloat(sin(rad)))  //distance btw labels
-                //
-                //
-                //                    .offset(x: dx, y: dy) // same explosion offset as segment
-                //            }
+//                    Text(feelings[i])
+//                        .foregroundColor(.black)
+//                        .offset(x: 100 * CGFloat(cos(rad)),
+//                                y:100 * CGFloat(sin(rad)))  //distance btw labels
+//    
+//    
+//                        .offset(x: dx, y: dy) // same explosion offset as segment
+////
+                Text(feelings[i])
+                               .font(.system(size: 14, weight: .bold))
                 
-                Text(titles[i]) // Using the capitalized title
-                    .font(.system(size: 14).bold())
-                    .foregroundColor(.white)
+                               .foregroundColor(.white)
+                               // Position text radially
+                               .offset(x: 110 * CGFloat(cos(rad)),
+                                       y: 110 * CGFloat(sin(rad)))
+                               // Rotate text to follow the curve
+                               .rotationEffect(.degrees(textRotation.degrees))
+                               // Apply the same explosion offset as the segment
+                               .offset(x: dx, y: dy)
+                               .scaleEffect(isSel && isZooming ? 2.0 : 1.0)
+                               .zIndex(isSel && isZooming ? 1 : 0)
                 
-                // 1. Position it radially
-                    .offset(x: labelOffset * CGFloat(cos(rad)), y: labelOffset * CGFloat(sin(rad)))
+//                Text(titles[i])
+//                    .font(.system(size: 14).bold())
+//                    .foregroundColor(.white)
+//                    
+//                    // 1. Position it radially. We use the calculated offset for the label position.
+//                    // The -25 offset pulls the label inward so it sits nicely in the segment.
+//                    .offset(x: (labelOffset - 25) * CGFloat(cos(rad)), y: (labelOffset - 25) * CGFloat(sin(rad)))
+//                    
+//                    // 2. Apply the explosion offset
+//                    .offset(x: dx, y: dy)
                 
-                // 2. APPLY THE RADIAL ROTATION (USE THE NEW CALCULATION)
-                    .rotationEffect(radialRotation) // <--- Use the new rotation variable
                 
-                // 3. Apply the explosion offset
-                    .offset(x: dx, y: dy)
             }
             
         }
