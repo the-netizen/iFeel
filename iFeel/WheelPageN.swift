@@ -34,6 +34,15 @@ struct WheelController: View {
     private let n = 7
     private let colors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple, .fuchsia]
     private let titles  = ["ANGRY","BAD","HAPPY","DISGUSTED","SAD","FEARFUL","SURPRISED"]
+    let feelings = [
+        "Fearful",
+         "Sad",
+         "Disgusted",
+         "Happy",
+         "Bad",
+         "Angry",
+         "Surprised"
+    ]
     
     @State private var selected: Int? = nil
     @State private var wheelRotation: Double = 0
@@ -43,9 +52,23 @@ struct WheelController: View {
     @State private var showCompletionPage: Bool = false
 
     var body: some View {
+
         NavigationStack {
-            ZStack { wheel }
-                .padding()
+            VStack(spacing: 0) {
+                            Text("How are you")
+                                .font(.system(size: 40, design: .rounded))
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 40)
+                            
+                            ZStack { wheel }
+                                .padding()
+                            
+                            Text("Feeling")
+                                .font(.system(size: 40, design: .rounded))
+                                .foregroundColor(.primary)
+                                .padding(.top, 40)
+                        } //VStack
+            
                 .navigationDestination(isPresented: $goDetail) {
                     if let i = selected {
                         DetailScreen(
@@ -74,7 +97,8 @@ struct WheelController: View {
                         )
                     }
                 }
-        }
+            
+        }// navStack
     }
     
     private func navigateBackToRoot() {
@@ -85,17 +109,21 @@ struct WheelController: View {
 
     private var wheel: some View {
         let step = 360.0 / Double(n)
+        let labelOffset: CGFloat = 100
+        
         return ZStack {
             ForEach(0..<n, id: \.self) { i in
                 let start = Double(i) * step
                 let end   = Double(i + 1) * step
                 let mid   = (start + end) / 2.0
                 let rad   = mid * .pi / 180
-
+                
                 let isSel = (selected == i)
                 let dx = isSel ? 18 * CGFloat(cos(rad)) : 0
                 let dy = isSel ? 18 * CGFloat(sin(rad)) : 0
-
+                let radialRotation = Angle(degrees: mid + 90) // text rotation
+                
+                
                 RingWedge(startDeg: start, endDeg: end, innerRadiusFactor: 0.58, gapDegrees: 5.0)
                     .fill(colors[i])
                     .compositingGroup()
@@ -107,8 +135,33 @@ struct WheelController: View {
                     .offset(x: dx, y: dy)
                     .scaleEffect(isSel && isZooming ? 2.0 : 1.0)
                     .zIndex(isSel && isZooming ? 1 : 0)
-                    .onTapGesture { handleTap(index: i, mid: mid) }
+                    .onTapGesture { handleTap(index: i, mid: mid)
+                    }
+                
+                
+                //                Text(feelings[i])
+                //                    .foregroundColor(.black)
+                //                    .offset(x: 100 * CGFloat(cos(rad)),
+                //                            y:100 * CGFloat(sin(rad)))  //distance btw labels
+                //
+                //
+                //                    .offset(x: dx, y: dy) // same explosion offset as segment
+                //            }
+                
+                Text(titles[i]) // Using the capitalized title
+                    .font(.system(size: 14).bold())
+                    .foregroundColor(.white)
+                
+                // 1. Position it radially
+                    .offset(x: labelOffset * CGFloat(cos(rad)), y: labelOffset * CGFloat(sin(rad)))
+                
+                // 2. APPLY THE RADIAL ROTATION (USE THE NEW CALCULATION)
+                    .rotationEffect(radialRotation) // <--- Use the new rotation variable
+                
+                // 3. Apply the explosion offset
+                    .offset(x: dx, y: dy)
             }
+            
         }
         .frame(width: 280, height: 280)
         .rotationEffect(.degrees(wheelRotation))
