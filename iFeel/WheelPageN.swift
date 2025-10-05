@@ -136,6 +136,7 @@ struct WheelController: View {
         }
     }
 }
+// MARK: - Wheel Close up(Page 2)
 
 struct DetailScreen: View {
     let titleTop: String
@@ -188,7 +189,7 @@ struct DetailScreen: View {
             }
             bottomOverlay
         }
-        .navigationBarBackButtonHidden(true)
+        .navigationBarBackButtonHidden(false)
     }
 
     private var hero: some View {
