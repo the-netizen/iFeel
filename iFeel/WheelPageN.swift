@@ -490,7 +490,7 @@ struct TechView: View {
                 Button(action: { showDetails = true }) {
                     HStack(spacing: 8) {
                         Image(systemName: "info.circle")
-                        Text("More Details")
+                        //Text("More Details")
                     }
                     .font(.system(size: 18, weight: .semibold))
                     .padding(.horizontal, 18)
@@ -502,7 +502,7 @@ struct TechView: View {
                 Button(action: nextTechnique) {
                     HStack(spacing: 8) {
                         Image(systemName: "shuffle")
-                        Text("Shuffle")
+                        //Text("Shuffle")
                     }
                     .font(.system(size: 18, weight: .semibold))
                     .padding(.horizontal, 18)
@@ -513,7 +513,7 @@ struct TechView: View {
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 20)
-            .background(.regularMaterial) // يبان واضح ومثبت تحت
+           // .background(.regularMaterial) // يبان واضح ومثبت تحت
         }
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showDetails) { detailsSheet }
