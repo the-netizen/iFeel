@@ -180,7 +180,9 @@ struct DetailScreen: View {
                     .padding(.horizontal)
 
                     VStack(spacing: 6) {
-                        Text(titleTop).font(.system(size: 28, weight: .medium))
+                        Text(titleTop)
+                        .font(Font.custom("Comfortaa-Bold", size: 28)) // Apply Comfortaa font
+                        .fontWeight(.heavy)
                         Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
                     }
                 }
@@ -238,7 +240,7 @@ struct DetailScreen: View {
                 shouldNav.toggle()
             } label: {
                 Text("START")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(Font.custom("comfortaa-bold", size: 22))
                     .padding(.horizontal, 36)
                     .padding(.vertical, 14)
                     .background(color)
@@ -390,11 +392,12 @@ struct CompletionView: View {
                     .foregroundStyle(.white, themeColor)
                 
                 Text("Well Done!")
-                    .font(.largeTitle)
+                    .font(.custom("Comfortaa-Bold", size: 34))  // Make sure the font name is correct
                     .fontWeight(.bold)
                 
                 Text("You have successfully completed the technique.")
-                    .font(.title3)
+    
+                    .font(.custom("Comfortaa-Bold", size: 20))  // Make sure the font name is correct
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -402,10 +405,11 @@ struct CompletionView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onDone){
+                Button(action: onDone) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(. black)  // Change color to black
+                    
                 }
             }
         }
