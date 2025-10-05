@@ -304,7 +304,7 @@ struct TechView: View {
                 
                 // Display the selected emotion title
                 Text(moodTitle)
-                    .font(.largeTitle)
+                    .font(.system(size: 60, weight: .heavy))
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                 
@@ -316,7 +316,7 @@ struct TechView: View {
                 
                 // Display the correct technique text
                 Text(techniqueText)
-                    .font(.system(size: 26, weight: .medium))
+                    .font(Font.custom("Comfortaa-bold", size: 26))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.primary)
                     .padding(.horizontal, 40)
@@ -337,7 +337,7 @@ struct TechView: View {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.primary)
-                    Text("Back")
+                    
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
