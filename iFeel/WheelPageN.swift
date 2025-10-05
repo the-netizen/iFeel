@@ -28,13 +28,18 @@ struct RingWedge: Shape {
     }
 }
 
+struct MoodTechnique {
+    let text: String
+    let icon: String
+}
+
 // MARK: - 2. DetailScreen (Page 2) - Must be defined BEFORE WheelController
 
 struct DetailScreen: View {
     let titleTop: String
     let mood: String
     let color: Color
-    var onStart: () -> Void = {} // This closure navigates to TechView
+    var onStart: () -> Void = {}
 
     // Layout parameters
     var titleTopPadding: CGFloat = 330
@@ -73,8 +78,8 @@ struct DetailScreen: View {
 
                     VStack(spacing: 6) {
                         Text(titleTop)
-                        .font(Font.custom("Comfortaa-Bold", size: 28)) // Apply Comfortaa font
-                        .fontWeight(.heavy)
+                            .font(Font.custom("Comfortaa-Bold", size: 28))
+                            .fontWeight(.heavy)
                         Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
                     }
                 }
@@ -86,7 +91,6 @@ struct DetailScreen: View {
     }
 
     private var hero: some View {
-        // ... (Hero view is unchanged)
         ZStack {
             let span = sliceSpanDeg
             let start = -90.0 - span/2
@@ -128,10 +132,9 @@ struct DetailScreen: View {
                 .offset(y: UIScreen.main.bounds.width * bottomYOffsetFactor)
                 .shadow(color: .black.opacity(0.08), radius: 16, y: -4)
 
-            // 🛠️ FIX 3: Use the correct onStart action for navigation
             Button(action: onStart) {
                 Text("START")
-                    .font(Font.custom("comfortaa-bold", size: 22))
+                    .font(Font.custom("Comfortaa-Bold", size: 22))
                     .padding(.horizontal, 36)
                     .padding(.vertical, 14)
                     .background(color)
@@ -141,7 +144,6 @@ struct DetailScreen: View {
             .offset(y: startButtonOffset)
         }
         .ignoresSafeArea(edges: .bottom)
-        // Removed .navigationDestination(isPresented: $shouldNav) to ensure clean flow
     }
 }
 
@@ -151,14 +153,8 @@ struct WheelController: View {
     private let n = 7
     private let colors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple, .fuchsia]
     private let titles  = ["ANGRY","BAD","HAPPY","DISGUSTED","SAD","FEARFUL","SURPRISED"]
-    let feelings = [
-        "Fearful",
-         "Sad",
-         "Disgusted",
-         "Happy",
-         "Bad",
-         "Angry",
-         "Surprised"
+    private let feelings = [
+        "Fearful", "Sad", "Disgusted", "Happy", "Bad", "Angry", "Surprised"
     ]
     
     @State private var selected: Int? = nil
@@ -169,56 +165,56 @@ struct WheelController: View {
     @State private var showCompletionPage: Bool = false
 
     var body: some View {
-
         NavigationStack {
             VStack(spacing: 0) {
-                            Text("How are you")
-                                .font(.system(size: 40, design: .rounded))
-                                .foregroundColor(.primary)
-                                .padding(.bottom, 40)
-                            
-                            ZStack { wheel }
-                                .padding()
-                            
-                            Text("Feeling")
-                                .font(.system(size: 40, design: .rounded))
-                                .foregroundColor(.primary)
-                                .padding(.top, 40)
-                        } //VStack
+                Text("How are you")
+                    .font(.system(size: 40, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 40)
+                    
+                ZStack { wheel }
+                    .padding()
+                    
+                Text("Feeling")
+                    .font(.system(size: 40, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.top, 40)
+            } //VStack
             
-                .navigationDestination(isPresented: $goDetail) {
-                    if let i = selected {
-                        DetailScreen( // DetailScreen is now defined above, so no error here
-                            titleTop: "You Picked",
-                            mood: titles[i],
-                            color: colors[i],
-                            onStart: { showTechniquePage = true }
-                        )
-                    }
+            .navigationDestination(isPresented: $goDetail) {
+                if let i = selected {
+                    DetailScreen(
+                        titleTop: "You Picked",
+                        mood: titles[i],
+                        color: colors[i],
+                        onStart: { showTechniquePage = true }
+                    )
                 }
-                // 🛠️ FIX 1: Passes all required data to the new TechView
-                .navigationDestination(isPresented: $showTechniquePage) {
-                    if let i = selected {
-                        let mood = titles[i] // Get the selected mood name
-                        let data = getTechniqueData(for: mood) // Get the mapped technique
-                        
-                        TechView( // TechView is defined below, which is okay in Swift's single-file context
-                            moodTitle: mood,
-                            techniqueText: data.text,
-                            techniqueIcon: data.icon,
-                            backgroundColor: colors[i],
-                            onDone: { showCompletionPage = true }
-                        )
-                    }
+            }
+            // Passes all required data to the new TechView
+            .navigationDestination(isPresented: $showTechniquePage) {
+                if let i = selected {
+                    let mood = titles[i]
+                    // Call the function that returns a random technique
+                    let data = getTechniqueData(for: mood)
+                    
+                    TechView(
+                        moodTitle: mood,
+                        techniqueText: data.text,
+                        techniqueIcon: data.icon,
+                        backgroundColor: colors[i],
+                        onDone: { showCompletionPage = true }
+                    )
                 }
-                .navigationDestination(isPresented: $showCompletionPage) {
-                    if let i = selected {
-                        CompletionView(
-                            onDone: navigateBackToRoot,
-                            themeColor: colors[i]
-                        )
-                    }
+            }
+            .navigationDestination(isPresented: $showCompletionPage) {
+                if let i = selected {
+                    CompletionView(
+                        onDone: navigateBackToRoot,
+                        themeColor: colors[i]
+                    )
                 }
+            }
             
         }// navStack
     }
@@ -229,31 +225,69 @@ struct WheelController: View {
         goDetail = false
     }
 
-    // 🛠️ FIX 1 (Helper): Maps the emotion to the correct technique text and icon
-    private func getTechniqueData(for mood: String) -> (text: String, icon: String) {
+    // FUNCTION: Returns a randomly selected technique for the given mood
+    private func getTechniqueData(for mood: String) -> MoodTechnique {
+        let techniques: [MoodTechnique]
+        
         switch mood.uppercased() {
         case "ANGRY":
-            return ("Take deep breaths and practice grounding techniques", "flame.fill")
+            techniques = [
+                // Set the icon string to the custom asset name "breathe"
+                // The string "breathe" matches your asset name.
+                MoodTechnique(text: "Take 10 deep, slow breaths. Focus only on the air moving in and out.", icon: "breathe"),
+                MoodTechnique(text: "Practice a 5-minute grounding exercise: Name 5 things you see, 4 you feel, 3 you hear, 2 you smell, and 1 you taste.", icon: "bolt.fill"),
+                MoodTechnique(text: "Do 20 jumping jacks or a quick burst of vigorous physical activity to release tension.", icon: "figure.walk"),
+                MoodTechnique(text: "Write down exactly what made you angry, then tear up the paper.", icon: "pencil.and.paper")
+            ]
         case "SAD":
-            return ("Clear your mind and meditate", "figure.mind.and.body")
+            techniques = [
+                MoodTechnique(text: "Clear your mind and meditate for 10 minutes, focusing on self-compassion.", icon: "figure.mind.and.body"),
+                MoodTechnique(text: "Listen to music that matches your mood, then switch to something calming or uplifting.", icon: "music.note"),
+                MoodTechnique(text: "Journal your thoughts and feelings without judgment to understand the source of your sadness.", icon: "book.fill"),
+                MoodTechnique(text: "Reach out to a friend or loved one for a brief, positive conversation.", icon: "person.2.fill")
+            ]
         case "HAPPY":
-            return ("Journal your gratitudes and share a smile", "face.smiling.fill")
+            techniques = [
+                MoodTechnique(text: "Journal your gratitudes: list 5 things you're truly thankful for right now.", icon: "face.smiling.fill"),
+                MoodTechnique(text: "Share your positive mood with someone else a compliment or a shared smile.", icon: "heart.fill"),
+                MoodTechnique(text: "Take a picture of something that represents this positive moment to remember it later.", icon: "camera.fill")
+            ]
         case "FEARFUL":
-            return ("Focus on your body and thoughts to stay present", "eye.fill")
+            techniques = [
+                MoodTechnique(text: "Focus on your body and thoughts to stay present. Name your fear, then question its reality.", icon: "eye.fill"),
+                MoodTechnique(text: "Create a safe space: find a quiet spot and wrap yourself in a cozy blanket.", icon: "house.fill"),
+                MoodTechnique(text: "Repeat a calming mantra to yourself, like 'I am safe' or 'This feeling will pass'.", icon: "infinity")
+            ]
         case "SURPRISED":
-            return ("Take a moment to process the sudden change", "sparkles")
+            techniques = [
+                MoodTechnique(text: "Take a moment to process the sudden change. Don't react instantly.", icon: "sparkles"),
+                MoodTechnique(text: "Ask yourself if the surprise is positive or negative, and how you need to respond to it.", icon: "questionmark.circle.fill"),
+                MoodTechnique(text: "Write down the event and analyze the shock. Break it down into facts.", icon: "doc.text.fill")
+            ]
         case "DISGUSTED":
-            return ("Identify the source of disgust and practice self-care", "hand.thumbsdown.fill")
-        case "BAD":
-            return ("Take a walk and notice 5 things around you", "figure.walk")
+            techniques = [
+                MoodTechnique(text: "Identify the exact source of the disgust and step away from it if possible.", icon: "hand.thumbsdown.fill"),
+                MoodTechnique(text: "Practice self-care: wash your face or hands, or change your environment entirely.", icon: "drop.fill"),
+                MoodTechnique(text: "Focus on something beautiful or pleasant in your immediate vicinity to counter the feeling.", icon: "sun.max.fill")
+            ]
+        case "BAD": // General negative/low
+            techniques = [
+                MoodTechnique(text: "Take a walk and notice 5 things around you to shift your focus outward.", icon: "figure.walk"),
+                MoodTechnique(text: "Do something small that you enjoy, like drinking a favorite tea or watching a funny clip.", icon: "mug.fill"),
+                MoodTechnique(text: "Remind yourself that it's okay to feel bad, and this feeling is temporary.", icon: "cloud.rain.fill")
+            ]
         default:
-            return ("Focus on your current emotional state", "leaf.fill")
+            techniques = [
+                MoodTechnique(text: "Focus on your current emotional state. What does it feel like?", icon: "leaf.fill")
+            ]
         }
+        
+        // Randomly select one technique from the list
+        return techniques.randomElement() ?? MoodTechnique(text: "Focus on your current emotional state.", icon: "leaf.fill")
     }
 
     private var wheel: some View {
         let step = 360.0 / Double(n)
-//        let labelOffset: CGFloat = 85
         
         return ZStack {
             ForEach(0..<n, id: \.self) { i in
@@ -266,9 +300,7 @@ struct WheelController: View {
                 let dx = isSel ? 18 * CGFloat(cos(rad)) : 0
                 let dy = isSel ? 18 * CGFloat(sin(rad)) : 0
                 // text rotation
-                let textRotation = Angle(degrees: mid/90)
-//                let radialRotation = Angle(degrees: mid + 90)
-                //                let radialRotation = Angle(degrees: (mid + 90) + (mid > 90 && mid < 270 ? 180 : 0))
+                let textRotation = Angle(degrees: mid)
                 
                 
                 RingWedge(startDeg: start, endDeg: end, innerRadiusFactor: 0.58, gapDegrees: 5.0)
@@ -282,45 +314,21 @@ struct WheelController: View {
                     .offset(x: dx, y: dy)
                     .scaleEffect(isSel && isZooming ? 2.0 : 1.0)
                     .zIndex(isSel && isZooming ? 1 : 0)
-                    .onTapGesture { handleTap(index: i, mid: mid)
-                    }
+                    .onTapGesture { handleTap(index: i, mid: mid) }
                 
-//                TEXT ROTATION
-                
-//                    Text(feelings[i])
-//                        .foregroundColor(.black)
-//                        .offset(x: 100 * CGFloat(cos(rad)),
-//                                y:100 * CGFloat(sin(rad)))  //distance btw labels
-//    
-//    
-//                        .offset(x: dx, y: dy) // same explosion offset as segment
-////
+                // TEXT LABELS
                 Text(feelings[i])
-                               .font(.system(size: 14, weight: .bold))
-                
-                               .foregroundColor(.white)
-                               // Position text radially
-                               .offset(x: 110 * CGFloat(cos(rad)),
-                                       y: 110 * CGFloat(sin(rad)))
-                               // Rotate text to follow the curve
-                               .rotationEffect(.degrees(textRotation.degrees))
-                               // Apply the same explosion offset as the segment
-                               .offset(x: dx, y: dy)
-                               .scaleEffect(isSel && isZooming ? 2.0 : 1.0)
-                               .zIndex(isSel && isZooming ? 1 : 0)
-                
-//                Text(titles[i])
-//                    .font(.system(size: 14).bold())
-//                    .foregroundColor(.white)
-//                    
-//                    // 1. Position it radially. We use the calculated offset for the label position.
-//                    // The -25 offset pulls the label inward so it sits nicely in the segment.
-//                    .offset(x: (labelOffset - 25) * CGFloat(cos(rad)), y: (labelOffset - 25) * CGFloat(sin(rad)))
-//                    
-//                    // 2. Apply the explosion offset
-//                    .offset(x: dx, y: dy)
-                
-                
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    // Position text radially
+                    .offset(x: 110 * CGFloat(cos(rad)),
+                            y: 110 * CGFloat(sin(rad)))
+                    // Rotate text to follow the curve
+                    .rotationEffect(.degrees(textRotation.degrees + 90))
+                    // Apply the same explosion offset as the segment
+                    .offset(x: dx, y: dy)
+                    .scaleEffect(isSel && isZooming ? 2.0 : 1.0)
+                    .zIndex(isSel && isZooming ? 1 : 0)
             }
             
         }
@@ -354,15 +362,31 @@ struct WheelController: View {
 // MARK: - 4. Technique (Page 3)
 
 struct TechView: View {
-    @Environment(\.dismiss) private var dismiss // Used to navigate back
+    @Environment(\.dismiss) private var dismiss
     
     // Properties to receive the specific mood data from WheelController
     let moodTitle: String
     let techniqueText: String
-    let techniqueIcon: String
+    let techniqueIcon: String // Will hold "breathe" or "flame.fill"
     var backgroundColor: Color
 
-    var onDone: () -> Void = {} // Action to navigate to the CompletionView
+    var onDone: () -> Void = {}
+    
+    // Helper function to dynamically load either a custom asset or an SFSymbol
+    @ViewBuilder
+    private func getIconView(iconName: String) -> some View {
+        // If the name does not contain a period, we assume it's a custom image asset name.
+        if !iconName.contains(".") {
+             // Loads image from your Asset Catalog by name
+             Image(iconName)
+                 .resizable()
+                 .renderingMode(.template) // Allows the foreground color to tint the image
+        } else {
+             // Loads an icon from the SFSymbol library
+             Image(systemName: iconName)
+                 .resizable()
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -374,40 +398,40 @@ struct TechView: View {
                 
                 // Display the selected emotion title
                 Text(moodTitle)
-                    .font(.system(size: 60, weight: .heavy))
+                    .font(.custom("Comfortaa-Bold", size: 60))
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                 
-                // Display the icon for the specific technique
-                Image(systemName: techniqueIcon).resizable().scaledToFit()
+                // Use the new dynamic image loader
+                getIconView(iconName: techniqueIcon)
+                    .scaledToFit()
                     .frame(maxHeight: 200)
                     .foregroundColor(backgroundColor) // Icon color matches the emotion color
                     .padding(.bottom, 30)
                 
                 // Display the correct technique text
                 Text(techniqueText)
-                    .font(Font.custom("Comfortaa-bold", size: 26))
+                    .font(Font.custom("Comfortaa-Bold", size: 26))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.primary)
                     .padding(.horizontal, 40)
                 
                 Spacer()
                 
-                // Single dot (as a placeholder for old pagination)
+                // Single dot
                 Circle()
                     .fill(Color.primary)
                     .frame(width: 8, height: 8)
                     .padding(.bottom, 40)
             }
         }
-        // 🛠️ FIX 2: Proper button alignment using ToolbarItem
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.primary)
-                    
+                    Text("Back")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -424,8 +448,6 @@ struct TechView: View {
 
 
 // MARK: - 5. Confetti Views
-
-// (No changes needed here)
 
 struct ConfettiPiece: View {
     @State private var yPos: CGFloat = .random(in: -200...0)
@@ -483,12 +505,11 @@ struct CompletionView: View {
                     .foregroundStyle(.white, themeColor)
                 
                 Text("Well Done!")
-                    .font(.custom("Comfortaa-Bold", size: 34))  // Make sure the font name is correct
+                    .font(.custom("Comfortaa-Bold", size: 34))
                     .fontWeight(.bold)
                 
                 Text("You have successfully completed the technique.")
-    
-                    .font(.custom("Comfortaa-Bold", size: 20))  // Make sure the font name is correct
+                    .font(.custom("Comfortaa-Bold", size: 20))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -499,8 +520,7 @@ struct CompletionView: View {
                 Button(action: onDone) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(. black)  // Change color to black
-                    
+                        .foregroundColor(.black)
                 }
             }
         }

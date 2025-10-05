@@ -11,7 +11,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		40BF4B172E8E9FEB0008D8D4 /* Exceptions for "iFeel" folder in "iFeel" target */ = {
+		716041F82E907AF400679435 /* Exceptions for "iFeel" folder in "iFeel" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -24,7 +24,7 @@
 		F37BA6C32E8AC7C800101D47 /* iFeel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				40BF4B172E8E9FEB0008D8D4 /* Exceptions for "iFeel" folder in "iFeel" target */,
+				716041F82E907AF400679435 /* Exceptions for "iFeel" folder in "iFeel" target */,
 			);
 			path = iFeel;
 			sourceTree = "<group>";
