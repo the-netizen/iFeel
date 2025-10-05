@@ -646,6 +646,7 @@ struct CompletionView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
                         .foregroundStyle(.secondary)
+                        .foregroundColor(.black)
                 }
             }
         }
