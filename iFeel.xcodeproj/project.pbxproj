@@ -6,7 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5A0D527C2E933D5300484855 /* WheelController+Preview.swift .swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D527B2E933D5300484855 /* WheelController+Preview.swift .swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		5A0D527B2E933D5300484855 /* WheelController+Preview.swift .swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WheelController+Preview.swift .swift"; sourceTree = "<group>"; };
 		F37BA6C12E8AC7C800101D47 /* iFeel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iFeel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -45,6 +50,7 @@
 		F37BA6B82E8AC7C800101D47 = {
 			isa = PBXGroup;
 			children = (
+				5A0D527B2E933D5300484855 /* WheelController+Preview.swift .swift */,
 				F37BA6C32E8AC7C800101D47 /* iFeel */,
 				F37BA6C22E8AC7C800101D47 /* Products */,
 			);
@@ -132,6 +138,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A0D527C2E933D5300484855 /* WheelController+Preview.swift .swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
