@@ -7,11 +7,3 @@
 
 import SwiftUI
 
-@main
-struct iFeelApp: App {
-    var body: some Scene {
-        WindowGroup {
-            WheelController()
-        }
-    }
-}
