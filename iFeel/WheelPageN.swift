@@ -544,7 +544,7 @@ struct WheelController: View {
                         let ang = angleDegSafe(at: value.location, in: size, fallback: prevDragAngle)
                         if !isDragging { isDragging = true; prevDragAngle = ang; return }
                         guard let prev = prevDragAngle else { prevDragAngle = ang; return }
-                        var d = shortestDelta(from: prev, to: ang)
+                        let d = shortestDelta(from: prev, to: ang)
                         if abs(d) > 45 { prevDragAngle = ang; return }
                         wheelRotation += d
                         prevDragAngle = ang
@@ -584,134 +584,6 @@ struct WheelController: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.00) {
             goDetail = true
             isZooming = false
-        }
-    }
-}
-// MARK: - Wheel Close up(Page 2)
-
-struct DetailScreen: View {
-    let titleTop: String
-    let mood: String
-    let color: Color
-    var onStart: () -> Void = {}
-
-    var titleTopPadding: CGFloat = 330
-    var heroTop: CGFloat = 570
-    var heroDiameter: CGFloat = 750
-    var sliceSpanDeg: Double = 85
-    var sliceInnerFactor: CGFloat = 0.20
-    var neighborsSpanScale: Double = 0.88
-    var neighborsGapDeg: Double = 1.5
-    var neighborsOffsetDeg: Double = -6
-    var glowOpacity: Double = 0.35
-    var glowBlur: CGFloat = 55
-    var bottomCircleScale: CGFloat = 1.2
-    var bottomYOffsetFactor: CGFloat = 0.93
-    var startButtonOffset: CGFloat = 280
-
-    
-    @State var shouldNav : Bool = false
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        ZStack {
-            Color(.systemBackground).ignoresSafeArea()
-            ZStack(alignment: .top) {
-                hero
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.top, heroTop)
-                VStack(spacing: 8) {
-                    HStack {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 18, weight: .semibold))
-                        }
-                        .tint(.primary)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-
-                    VStack(spacing: 6) {
-                        Text(titleTop).font(.system(size: 28, weight: .medium))
-                        Text(mood.uppercased()).font(.system(size: 60, weight: .heavy))
-                    }
-                }
-                .padding(.top, titleTopPadding)
-            }
-            bottomOverlay
-        }
-        .navigationBarBackButtonHidden(false)
-    }
-
-    private var hero: some View {
-        ZStack {
-            let span = sliceSpanDeg
-            let start = -90.0 - span/2
-            let end   = -90.0 + span/2
-            let nSpan = span * neighborsSpanScale
-            Circle()
-                .fill(color.opacity(glowOpacity))
-                .frame(width: heroDiameter * 0.9, height: heroDiameter * 0.9)
-                .blur(radius: glowBlur)
-                .blendMode(.plusLighter)
-                .offset(y: 8)
-            RingWedge(startDeg: start - neighborsOffsetDeg - nSpan,
-                      endDeg:   start - neighborsOffsetDeg,
-                      innerRadiusFactor: sliceInnerFactor,
-                      gapDegrees: neighborsGapDeg)
-                .fill(Color.black.opacity(0.16))
-                .frame(width: heroDiameter, height: heroDiameter)
-            RingWedge(startDeg: end + neighborsOffsetDeg,
-                      endDeg:   end + neighborsOffsetDeg + nSpan,
-                      innerRadiusFactor: sliceInnerFactor,
-                      gapDegrees: neighborsGapDeg)
-                .fill(Color.black.opacity(0.16))
-                .frame(width: heroDiameter, height: heroDiameter)
-            RingWedge(startDeg: start, endDeg: end,
-                      innerRadiusFactor: sliceInnerFactor, gapDegrees: 20)
-                .fill(color)
-                .frame(width: heroDiameter, height: heroDiameter)
-                .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
-        }
-        .frame(height: heroDiameter)
-    }
-
-    private var bottomOverlay: some View {
-        ZStack {
-            Circle()
-                .fill(Color.white)
-                .frame(width: UIScreen.main.bounds.width * bottomCircleScale,
-                       height: UIScreen.main.bounds.width * bottomCircleScale)
-                .offset(y: UIScreen.main.bounds.width * bottomYOffsetFactor)
-                .shadow(color: .black.opacity(0.08), radius: 16, y: -4)
-
-            
-            Button {
-                shouldNav.toggle()
-            } label: {
-                Text("START")
-                    .font(.system(size: 22, weight: .semibold))
-                    .padding(.horizontal, 36)
-                    .padding(.vertical, 14)
-                    .background(color)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }.offset(y: startButtonOffset)
-            
-
-//            Button(action: onStart) {
-//                Text("START")
-//                    .font(.system(size: 22, weight: .semibold))
-//                    .padding(.horizontal, 36)
-//                    .padding(.vertical, 14)
-//                    .background(color)
-//                    .foregroundStyle(.white)
-//                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-          //  }.
-        }
-        .ignoresSafeArea(edges: .bottom)
-        .navigationDestination(isPresented: $shouldNav) {
-            MindOnboardingView()
         }
     }
 }
